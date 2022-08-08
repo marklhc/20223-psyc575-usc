@@ -1,24 +1,30 @@
 project:
   type: website
+  render:
+    - "*.qmd"
 
 website:
-  title: "20223-psyc575-usc"
+  title: "PSYC 575 Multilevel Modeling (2022 Fall)"
   navbar:
     left:
-      - href: index.qmd
-        text: Home
-      - href: syllabus.qmd
-        text: Syllabus
-      - href: modules/week1.qmd
-        text: Modules
-      # - href: rcodes/rcode3.qmd
-      #   text: R code
+      - text: "Home"
+        file: index.qmd
+      - text: "Syllabus"
+        file: syllabus.qmd
+      - sidebar:modules
+      - text: "R code"
+        file: codes/rcode3.qmd
       - about.qmd
 
   sidebar:
-    - title: "Modules"
+    - id: modules
+      title: "Modules"
       contents:
         - modules/week1.qmd
+
+    - title: "R code"
+      contents:
+        - codes/rcode3.qmd
 
 format:
   html:

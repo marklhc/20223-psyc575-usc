@@ -1,0 +1,8 @@
+---
+title: "R Codes (Week 3)"
+format: html
+params:
+  rmd_file: "week3-random-intercept-model"
+---
+
+{{< include _rcode-common.qmd >}}

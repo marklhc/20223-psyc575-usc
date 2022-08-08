@@ -1,30 +1,30 @@
 ---
 title: "Random Intercept Model"
-format: html
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = ">#")
-```
 
 ## Load Packages and Import Data
 
-You can use the `message=FALSE` option to suppress the package loading messages
+You can use the `message = FALSE` option to suppress the package loading messages
 
-```{r load-pkg, message=FALSE}
+```{r load-pkg, message = FALSE}
 # To install a package, run the following ONCE (and only once on your computer)
-# install.packages("psych")  
+# install.packages("psych")
 library(here)  # makes reading data more consistent
 library(tidyverse)  # for data manipulation and plotting
 library(haven)  # for importing SPSS/SAS/Stata data
 library(lme4)  # for multilevel analysis
+library(brms)  # for Bayesian multilevel analysis
 library(lattice)  # for dotplot (working with lme4)
 library(sjPlot)  # for plotting effects
 library(MuMIn)  # for computing r-squared
 library(r2mlm)  # for computing r-squared
-library(broom.mixed)  # for summarizing results
+# library(broom.mixed)  # for summarizing results
 library(modelsummary)  # for making tables
-theme_set(theme_bw())  # Theme; just my personal preference
 ```
 
 In R, there are many packages for multilevel modeling, two of the most common ones are the `lme4` package and the `nlme` package. In this note I will show how to run different basic multilevel models using the `lme4` package, which is newer. However, some of the models, like unstructured covariance structure, will need the `nlme` package or other packages (like the `brms` and the `rstanarm` packages with Bayesian estimation).
@@ -34,10 +34,10 @@ In R, there are many packages for multilevel modeling, two of the most common on
 First, download the data from <https://github.com/marklhc/marklai-pages/raw/master/data_files/hsball.sav>.  We'll import the data in .sav format using the `read_sav()` function from the 
 `haven` package. 
 
-```{r import_sav, message=FALSE}
+```{r import_sav, message = FALSE}
 # Read in the data (pay attention to the directory)
 hsball <- read_sav(here("data_files", "hsball.sav"))
-hsball  # print the data
+hsball # print the data
 ```
 
 ## Run the Random Intercept Model
@@ -68,12 +68,16 @@ $$\color{red}{\text{mathach}}_{ij} = \color{green}{\gamma_{00} (1)}
                                      + e_{ij}. $$
 With that, we can see
 
-+ outcome = `mathach`, 
-+ fixed = `1`, 
-+ random = `1`, and 
-+ cluster ID = `id`.
+- outcome = `mathach`, 
+- fixed = `1`, 
+- random = `1`, and 
+- cluster ID = `id`.
 
 Thus the following syntax:
+
+::: {.panel-tabset}
+
+#### `lme4`
 
 ```{r ran_int}
 # outcome = mathach
@@ -84,24 +88,38 @@ ran_int <- lmer(mathach ~ 1 + (1 | id), data = hsball)
 summary(ran_int)
 ```
 
+#### `brms`
+
+```{r ran_int_brm}
+# outcome = mathach
+# fixed = gamma_{00} * 1
+# random = u_{0j} * 1, with j indexing school id
+ran_int_brm <- brm(mathach ~ 1 + (1 | id), data = hsball,
+                   file = "brms_cached_ran_int")
+# Summarize results
+summary(ran_int_brm)
+```
+
+:::
+
 ### Showing the variations across (a subset of) schools
 
 ```{r plot-means}
 # Randomly select 10 school ids
+set.seed(1330) # setting the seed for reproducibility
 random_ids <- sample(unique(hsball$id), size = 10)
 (p_subset <- hsball %>%
-    filter(id %in% random_ids) %>%  # select only 10 schools
+    filter(id %in% random_ids) %>% # select only 10 schools
     ggplot(aes(x = id, y = mathach)) +
     geom_jitter(height = 0, width = 0.1, alpha = 0.3) +
     # Add school means
     stat_summary(
-      fun = "mean",
-      geom = "point",
-      col = "red",
-      shape = 17,
-      # use triangles
-      size = 4
-    )  # make them larger
+        fun = "mean",
+        geom = "point",
+        col = "red",
+        shape = 17, # use triangles
+        size = 4 # make them larger
+    )
 )
 ```
 
@@ -117,38 +135,38 @@ num_students <- nrow(hsball)
 num_schools <- length(unique(hsball$id))
 # Simulate with only gamma00 (i.e., tau0 = 0 and sigma = 0)
 simulated_data1 <- tibble(
-  id = hsball$id, 
-  mathach = gamma00
+    id = hsball$id,
+    mathach = gamma00
 )
 # Show data with no variation
 # The `%+%` operator is use to substitute with a different data set
 p_subset %+%
-  (simulated_data1 %>%
-     filter(id %in% random_ids))
+    (simulated_data1 %>%
+        filter(id %in% random_ids))
 # Simulate with gamma00 + e_ij (i.e., tau0 = 0)
 simulated_data2 <- tibble(
-  id = hsball$id, 
-  mathach = gamma00 + rnorm(num_students, sd = sigma)
+    id = hsball$id,
+    mathach = gamma00 + rnorm(num_students, sd = sigma)
 )
 # Show data with no school-level variation
 p_subset %+%
-  (simulated_data2 %>%
-     filter(id %in% random_ids))
+    (simulated_data2 %>%
+        filter(id %in% random_ids))
 # Simulate with gamma00 + u_0j + e_ij
 # First, obtain group indices that starts from 1 to 160
 group_idx <- group_by(hsball, id) %>% group_indices()
 # Then simulate 160 u0j
 u0j <- rnorm(num_schools, sd = tau0)
 simulated_data3 <- tibble(
-  id = hsball$id, 
-  mathach = gamma00 + 
-    u0j[group_idx] +  # expand the u0j's from 160 to 7185
-    rnorm(num_students, sd = sigma)
+    id = hsball$id,
+    mathach = gamma00 +
+        u0j[group_idx] + # expand the u0j's from 160 to 7185
+        rnorm(num_students, sd = sigma)
 )
 # Show data with both school and student variations
 p_subset %+%
-  (simulated_data3 %>%
-     filter(id %in% random_ids))
+    (simulated_data3 %>%
+        filter(id %in% random_ids))
 ```
 
 The handy `simulate()` function can also be used to simulate the data
@@ -156,12 +174,12 @@ The handy `simulate()` function can also be used to simulate the data
 ```{r simulate-ran_int, eval=FALSE}
 simulated_math <- simulate(ran_int, nsim = 1)
 simulated_data4 <- tibble(
-  id = hsball$id, 
-  mathach = simulated_math$sim_1
+    id = hsball$id,
+    mathach = simulated_math$sim_1
 )
 p_subset %+%
-  (simulated_data4 %>%
-     filter(id %in% random_ids))
+    (simulated_data4 %>%
+        filter(id %in% random_ids))
 ```
 
 
@@ -177,22 +195,26 @@ Here's a plot showing the sample schools means (with no borrowing of information
 
 ```{r eb-vs-ols, fig.asp = 1}
 # Compute raw school means and EB means
-hsball %>% 
-  group_by(id) %>% 
-  # Raw means
-  summarise(mathach_raw_means = mean(mathach)) %>% 
-  arrange(mathach_raw_means) %>%  # sort by the means
-  # EB means (the "." means using the current data)
-  mutate(mathach_eb_means = predict(ran_int, .), 
-         index = row_number()) %>%  # add row number as index for plotting
-  ggplot(aes(x = index, y = mathach_raw_means)) + 
-  geom_point(aes(col = "Raw")) + 
-  # Add EB means
-  geom_point(aes(y = mathach_eb_means, col = "EB"), shape = 1) + 
-  geom_segment(aes(x = index, xend = index, 
-                   y = mathach_eb_means, yend = mathach_raw_means, 
-                   col = "EB")) + 
-  labs(y = "School mean achievement", col = "")
+hsball %>%
+    group_by(id) %>%
+    # Raw means
+    summarise(mathach_raw_means = mean(mathach)) %>%
+    arrange(mathach_raw_means) %>% # sort by the means
+    # EB means (the "." means using the current data)
+    mutate(
+        mathach_eb_means = predict(ran_int, .),
+        index = row_number() # add row number as index for plotting
+    ) %>%
+    ggplot(aes(x = index, y = mathach_raw_means)) +
+    geom_point(aes(col = "Raw")) +
+    # Add EB means
+    geom_point(aes(y = mathach_eb_means, col = "EB"), shape = 1) +
+    geom_segment(aes(
+        x = index, xend = index,
+        y = mathach_eb_means, yend = mathach_raw_means,
+        col = "EB"
+    )) +
+    labs(y = "School mean achievement", col = "")
 ```
 
 ### Intraclass correlations
@@ -216,10 +238,10 @@ bootmlm:::prof_ci_icc(ran_int)
 We have one predictor, `meanses`, in the fixed part. 
 
 ```{r mathach-meanses}
-hsball %>% 
-  ggplot(aes(x = meanses, y = mathach, col = id)) + 
-  geom_point(alpha = 0.5, size = 0.5) + 
-  guides(col = "none")
+hsball %>%
+    ggplot(aes(x = meanses, y = mathach, col = id)) +
+    geom_point(alpha = 0.5, size = 0.5) +
+    guides(col = "none")
 ```
 
 ## Model Equation
@@ -244,17 +266,21 @@ confint(m_lv2, parm = "beta_")
 The 95% confidence intervals (CIs) above showed the uncertainty associated with the estimates. Also, as the 95% CI for `meanses` does not contain zero, there is evidence for the positive association of SES and `mathach` at the school level.
 
 ```{r plot-m_lv2}
-sjPlot::plot_model(m_lv2, type = "pred", terms = "meanses", 
-                   show.data = TRUE, title = "", 
-                   dot.size = 0.5) + 
-  # Add the group means
-  stat_summary(data = hsball, aes(x = meanses, y = mathach), 
-               fun = mean, geom = "point",
-               col = "red",
-               shape = 17,
-               # use triangles
-               size = 3, 
-               alpha = 0.7)
+sjPlot::plot_model(m_lv2,
+    type = "pred", terms = "meanses",
+    show.data = TRUE, title = "",
+    dot.size = 0.5
+) +
+    # Add the group means
+    stat_summary(
+        data = hsball, aes(x = meanses, y = mathach),
+        fun = mean, geom = "point",
+        col = "red",
+        shape = 17,
+        # use triangles
+        size = 3,
+        alpha = 0.7
+    )
 ```
 
 ### Proportion of variance predicted
@@ -281,6 +307,6 @@ Notice that the standard error with regression is only half of that with MLM.
 
 ```{r mlm-vs-ols}
 m_lm <- lm(mathach ~ meanses, data = hsball)
-msummary(list("MLM" = m_lv2, 
+msummary(list("MLM" = m_lv2,
               "Linear regression" = m_lm))
 ```

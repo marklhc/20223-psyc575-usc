@@ -10,7 +10,7 @@ execute:
 source("../helper.R")
 ```
 
-Before you start the materials for week 1, make sure you have reviewed the [syllabus](syllabus.qmd). 
+Before you start the materials for week 1, make sure you have reviewed the [syllabus](../syllabus.qmd). 
 
 # Week Learning Objectives
 

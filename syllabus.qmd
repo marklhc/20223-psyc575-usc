@@ -321,6 +321,4 @@ wget https://arr.usc.edu/wp-content/uploads/2021/03/USCStatementAcademicConductS
 pandoc -s USCStatementAcademicConductSupportSystems.docx --wrap=none -t markdown -o statement_systems.md
 ```
 
-```{r}
-#| child: statement_systems.md
-```
+{{< include statement_systems.md >}}
