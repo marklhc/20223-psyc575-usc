@@ -1,0 +1,15 @@
+# History files
+.Rhistory
+
+# Data files
+/data_files/
+
+# Local files
+/local_files/
+/.quarto/
+
+# brms cached files
+brms_cached_*\.rds
+
+# VS code files
+*\.code-workspace

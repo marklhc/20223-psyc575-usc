@@ -1,0 +1,30 @@
+project:
+  type: website
+
+website:
+  title: "20223-psyc575-usc"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: syllabus.qmd
+        text: Syllabus
+      - href: modules/week1.qmd
+        text: Modules
+      # - href: rcodes/rcode3.qmd
+      #   text: R code
+      - about.qmd
+
+  sidebar:
+    - title: "Modules"
+      contents:
+        - modules/week1.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
+

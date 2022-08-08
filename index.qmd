@@ -1,0 +1,10 @@
+---
+title: "PSYC 575 Multilevel Modeling (2022 Fall)"
+---
+
+This is the course website for PSYC 575 in the 2021 Fall semester. The course follows a flipped course model so that students will review assigned readings and prerecorded lecture videos at their own time, while the class meeting time will be dedicated to Q&A and exercises. You will find the syllabus, lecture materials, and R codes in the navigation bar in the top right corner. Homework submission will be through [Blackboard](https://blackboard.usc.edu). 
+
+- The lecture videos are licensed under the standard YouTube License
+- Code content is licensed under the MIT license
+- Other course materials are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>  
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>

@@ -1,0 +1,99 @@
+---
+title: "Week 1"
+subtitle: "Overview of Multilevel Models"
+execute:
+  echo: false
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+```
+
+Before you start the materials for week 1, make sure you have reviewed the [syllabus](syllabus.qmd). 
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Identify alternative names for multilevel modeling (MLM)
+- Describe the types of data MLM can handle
+- Knit a simple R Markdown file
+
+## Task Lists
+
+1. Attend the Tuesday session for course introduction and Q&A
+2. Install/Update R and RStudio on your computer
+3. Review the resources (lecture videos and slides)
+4. Complete the assigned readings
+    * Snijders & Bosker chapters 1 and [2][4] (they're relatively short)
+    * [R Markdown Intro][1]
+    * [Markdown Quick Reference][2]
+5. Introduce yourself on the #introduction Slack channel (as part of HW 1)
+6. Attend the Thursday session and participate in the class exercise
+7. Complete Homework 1
+
+[1]: https://vimeo.com/178485416
+[2]: https://web.mit.edu/r/current/RStudio/resources/markdown_help.html
+[4]: https://us.sagepub.com/sites/default/files/upm-assets/44075_book_item_44075.pdf
+
+# Lecture
+
+## Slides
+
+## Multilevel Data Structure
+
+```{r}
+add_youtube("ufvCUaUkYOA")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "How would you describe the data structure in the video?",
+    answer = "hierarchical",
+    options = c("observational", "educational", "hierarchical"),
+    type = "radio",
+    alignment = TRUE
+)
+```
+
+## Name and History
+
+```{r}
+add_youtube("9Ax8W6VPgmk")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What is another name for multilevel modeling?",
+    answer = c("mixed-effect modeling"),  
+    options = c("mixed-effect modeling", "hierarchical regression", 
+                "fixed-effect modeling"), 
+    type = "radio"
+)
+```
+
+## Usage of MLM
+
+```{r}
+add_youtube("4fl2chIkDy4")
+```
+
+::: {.callout-tip appearance="simple"}
+
+Another example that relates to ecological fallacies is the ["happiness paradox"](https://esrc.ukri.org/about-us/50-years-of-esrc/50-achievements/the-easterlin-paradox/) in economics, which says that income is related to happiness in a cross-sectional analysis (i.e., between-person level) but not in a longitudinal/time series analysis (i.e., within-person level).
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "In the data structure where there are multiple measurements for the same person, which level is level 1?",
+    answer = c("measurement"),
+    options = c("measurement", "person"),
+    type = "radio",
+    alignment = TRUE
+)
+```
