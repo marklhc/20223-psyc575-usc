@@ -3,22 +3,26 @@ title: "Week 1"
 subtitle: "Overview of Multilevel Models"
 execute:
   echo: false
+params:
+  slides: "01_intro"
 ---
 
 ```{r}
 #| include: false
 source("../helper.R")
+source("../render_slides.R", local = TRUE)
 ```
 
-Before you start the materials for week 1, make sure you have reviewed the [syllabus](../syllabus.qmd). 
+Before you start the materials for week 1, make sure you have reviewed the [syllabus](/syllabus.qmd).
 
 # Week Learning Objectives
 
-By the end of this module, you will be able to 
+By the end of this module, you will be able to
 
 - Identify alternative names for multilevel modeling (MLM)
 - Describe the types of data MLM can handle
 - Knit a simple R Markdown file
+- Review concepts in multiple regression, including model equations, interactions, and interpretations
 
 ## Task Lists
 
@@ -26,20 +30,30 @@ By the end of this module, you will be able to
 2. Install/Update R and RStudio on your computer
 3. Review the resources (lecture videos and slides)
 4. Complete the assigned readings
-    * Snijders & Bosker chapters 1 and [2][4] (they're relatively short)
+    * SB ch 1, [2][3]
     * [R Markdown Intro][1]
-    * [Markdown Quick Reference][2]
+    * [rmarkdown cheatsheet][2]
+    * - [Gelman et al. ch 1.1, 1.2, 1.4][4]
 5. Introduce yourself on the #introduction Slack channel (as part of HW 1)
 6. Attend the Thursday session and participate in the class exercise
 7. Complete Homework 1
 
-[1]: https://vimeo.com/178485416
-[2]: https://web.mit.edu/r/current/RStudio/resources/markdown_help.html
-[4]: https://us.sagepub.com/sites/default/files/upm-assets/44075_book_item_44075.pdf
+[1]: https://rmarkdown.rstudio.com/lesson-1.html
+[2]: https://raw.githubusercontent.com/rstudio/cheatsheets/main/rmarkdown.pdf
+[3]: https://us.sagepub.com/sites/default/files/upm-assets/44075_book_item_44075.pdf
+[4]: https://statmodeling.stat.columbia.edu/wp-content/uploads/2020/07/raos_overview.pdf
 
 # Lecture
 
 ## Slides
+
+```{r}
+xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html")))
+```
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
 
 ## Multilevel Data Structure
 
@@ -68,9 +82,9 @@ add_youtube("9Ax8W6VPgmk")
 #| results: asis
 practice_question(
     "What is another name for multilevel modeling?",
-    answer = c("mixed-effect modeling"),  
-    options = c("mixed-effect modeling", "hierarchical regression", 
-                "fixed-effect modeling"), 
+    answer = c("mixed-effect modeling"),
+    options = c("mixed-effect modeling", "hierarchical regression",
+                "fixed-effect modeling"),
     type = "radio"
 )
 ```
@@ -97,3 +111,9 @@ practice_question(
     alignment = TRUE
 )
 ```
+
+## Review of Regression
+
+If you need a refresher on multiple regression, please check out [this module](week1b.qmd).
+
+:::

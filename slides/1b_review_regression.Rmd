@@ -1,0 +1,464 @@
+---
+title: "Review of Regression Analysis"
+subtitle: "PSYC 575"
+author: "Mark Lai"
+institute: "University of Southern California"
+date: "2020/08/04 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      ratio: '16:9'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+params:
+  for_class: false
+---
+
+```{r, child = "slide_settings.RMarkdown"}
+```
+
+# Statistical Model
+
+.pull-left[
+
+```{r stat-model, message=FALSE, echo=FALSE}
+library(tidyverse)
+theme_set(theme_bw())
+x <- runif(100, 0, 15)
+y <- 1000 + 200 * x + rnorm(100, 0, 300)
+df <- data.frame(x, y)
+lm_fit <- lm(y ~ x, data = df)
+
+k <- 2.5
+sigma <- sigma(lm_fit)
+ab <- coef(lm_fit)
+a <- ab[1]
+b <- ab[2]
+
+x <- seq(-k * sigma, k * sigma, length.out = 50)
+y <- dnorm(x, 0, sigma) / dnorm(0, 0, sigma)
+
+x0 <- 0
+y0 <- a + b * x0
+path1 <- data.frame(x = y + x0, y = x + y0)
+segment1 <- data.frame(x = x0, y = y0 - k * sigma, xend = x0, yend = y0 + k * sigma)
+x0 <- 5
+y0 <- a + b * x0
+path2 <- data.frame(x = y + x0, y = x + y0)
+segment2 <- data.frame(x = x0, y = y0 - k * sigma, xend = x0, yend = y0 + k * sigma)
+x0 <- 10
+y0 <- a + b * x0
+path3 <- data.frame(x = y + x0, y = x + y0)
+segment3 <- data.frame(x = x0, y = y0 - k * sigma, xend = x0, yend = y0 + k * sigma)
+
+ggplot(df, mapping = aes(x = x, y = y)) +
+  geom_point(color = "blue") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_path(aes(x, y), data = path1, color = "green") +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment1) +
+  geom_path(aes(x, y), data = path2, color = "green") +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment2) +
+  geom_path(aes(x, y), data = path3, color = "green") +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment3) + 
+  labs(x = "", y = "") + 
+  theme(axis.ticks = element_blank(), 
+        axis.text = element_blank())
+```
+
+]
+
+--
+
+.pull-right[
+
+## A set of statistical assumptions describing how data are generated
+
+- Deterministic/fixed component
+
+$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots$$
+
+- Stochastic/random component
+
+$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots + \color{red}{e_i}$$
+$$\color{red}{e_i \sim N(0, \sigma)}$$
+
+]
+
+???
+
+- It's only a review so I won't go deep. 
+- You may check out the sections in the book by Gelman et al. 
+- Model in OpenBoard
+- Statistical notation
+    * Notation for normal distribution
+    * Important for MLM
+
+---
+
+class: middle, center
+
+# Why Regression?
+
+--
+
+### MLM is an extension of multiple regression to deal with data from multiple levels
+
+---
+
+# Learning Objectives
+
+### Refresh your memory on regression
+
+--
+
+- Describe the statistical model
+
+--
+
+- Write out the model equations
+
+--
+
+- Simulate data based on a regression model
+
+--
+
+- Plot interactions
+
+---
+
+class: inverse, middle, center
+
+# R Demonstration
+
+???
+
+Transition to RStudio
+
+- Data Import
+- Explain the variables
+
+---
+
+# Salary Data
+
+From [Cohen, Cohen, West & Aiken (2003)](https://doi.org/10.4324/9780203774441)
+
+Examine factors related to annual salary of faculty in a university department
+
+--
+
+- time = years after receiving degree
+- pub = # of publications
+- sex = gender (0 = male, 1 = female)
+- citation = # of citations
+- salary = annual salary
+
+---
+
+# Data Exploration
+
+.pull-left[
+
+```{r salary_dat, results='hide', echo=FALSE, fig.retina=3}
+# Read in the data
+salary_dat <- read.table(here::here("data_files", "salary.txt"), header = TRUE)
+psych::pairs.panels(salary_dat[ , -1],  # not plotting the first column
+                    ellipses = FALSE)
+```
+
+]
+
+???
+
+Explain what the x axis, y axis, diagonals are
+
+Citation vs salary as an example
+
+--
+
+.pull-right[
+
+- How does the distribution of `salary` look?
+
+- Are there more males or females in the data?
+
+- How would you describe the relationship between number of publications and salary?
+
+]
+
+---
+
+# Simple Linear Regression
+
+### Sample regression line
+
+### Confidence intervals
+
+### Centering
+
+???
+
+- Regression line is only a sample estimate; there is uncertainty
+- Uncertainty measured by standard errors and confidence intervals
+    * Show animations on the varying regression slopes
+    * A function of sample size
+- Centering: Draw picture on changing the x-axis
+- Interpretations: unit increase in $x$ associated with $\beta$ unit increase in $y$
+
+---
+
+class: inverse, middle, center
+
+# Simulation
+
+See lecture and R code
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With $k$ categories, one needs $k - 1$ dummy variables
+
+The coefficients are differences relative to the reference group
+
+]
+
+--
+
+.pull-right[
+
+```{r recode-sex, include=FALSE}
+salary_dat <- salary_dat %>% 
+  mutate(sex = factor(sex, levels = c(0, 1), 
+                      labels = c("male", "female")))
+p2 <- ggplot(salary_dat, aes(x = sex, y = salary)) + 
+    geom_boxplot() + 
+    geom_jitter(height = 0, width = 0.1)
+```
+
+```{r p2, echo=FALSE}
+set.seed(1413)
+p2
+```
+
+
+]
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With $k$ categories, one needs $k - 1$ dummy variables
+
+The coefficients are differences relative to the reference group
+
+Male = 0
+
+$$y = \beta_0 + \beta_1 (0) = \beta_0$$
+
+]
+
+.pull-right[
+
+```{r p2-1, ref.label='p2', echo=FALSE}
+```
+
+]
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With $k$ categories, one needs $k - 1$ dummy variables
+
+The coefficients are differences relative to the reference group
+
+Male = 0
+
+$$y = \beta_0 + \beta_1 (0) = \beta_0$$
+
+Female = 1
+
+$$y = \beta_0 + \beta_1 (1) = \beta_0 + \beta_1$$
+
+]
+
+.pull-right[
+
+```{r p2-2, ref.label='p2', echo=FALSE}
+```
+
+
+]
+
+---
+
+class: inverse, middle, center
+
+# Multiple Regression
+
+---
+
+.pull-left[
+
+# Partial Effects
+
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}^c_i + \beta_2 \text{time}_i + e_i$$
+
+![](https://github.com/marklhc/marklai-pages/raw/master/static/img/regression_venn.png)
+
+]
+
+???
+
+Transition to R
+
+--
+
+.pull-right[
+
+# Interpretations
+
+### Every unit increase in $X$ is associated with $\beta_1$ unit increase in $Y$, **when all other predictors are constant**
+
+]
+
+---
+
+# Interactions
+
+### Regression slope of a predictor depends on another predictor
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 \times \text{time}^c \\
+  & \quad + 15 (\text{pub}^c)(\text{time}^c)
+\end{align}
+
+--
+
+`time` = 7 $\Rightarrow$ `time_c` = 0.21
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 (0.21) \\
+  & \quad + 15 (\text{pub}^c)(0.21) \\
+  & = 54440 + 120 \times \text{pub}^c
+\end{align}
+
+--
+
+`time` = 15 $\Rightarrow$ `time_c` = 8.21
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 (8.21) \\
+  & \quad + 15 (\text{pub}^c)(8.21) \\
+  & = 62152 + 228 \times \text{pub}^c
+\end{align}
+
+---
+
+# Interactions
+
+### Regression slope of a predictor depends on another predictor
+
+.pull-left[
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 \times \text{time}^c \\
+  & \quad + 15 (\text{pub}^c)(\text{time}^c)
+\end{align}
+
+`time` = 7 $\Rightarrow$ `time_c` = 0.21
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 (0.21) \\
+  & \quad + 15 (\text{pub}^c)(0.21) \\
+  & = 54440 + 120 \times \text{pub}^c
+\end{align}
+
+`time` = 15 $\Rightarrow$ `time_c` = 8.21
+
+\begin{align}
+  \widehat{\text{salary}} & = 54238 + 105 \times \text{pub}^c + 964 (8.21) \\
+  & \quad + 15 (\text{pub}^c)(8.21) \\
+  & = 62152 + 228 \times \text{pub}^c
+\end{align}
+
+]
+
+.pull-right[
+
+```{r m4, echo=FALSE}
+salary_dat <- salary_dat %>% 
+  mutate(pub_c = pub - mean(pub), 
+         time_c = time - mean(time))
+# Fit the model with interactions:
+m4 <- lm(salary ~ pub_c * time_c, data = salary_dat)
+```
+
+```{r p4, echo=FALSE, fig.width=4.5, fig.retina=3, fig.asp=.8, out.width='100%'}
+interactions::interact_plot(m4,
+                            pred = "pub_c",
+                            modx = "time_c",
+                            # Insert specific values to plot the slopes. 
+                            # Pay attention that `time_c` has been centered
+                            modx.values = c(1, 7, 15) - 6.79, 
+                            modx.labels = c(1, 7, 15), 
+                            plot.points = TRUE, 
+                            # change to TRUE to plot confidence bands
+                            interval = FALSE,  
+                            x.label = "Number of publications (mean-centered)", 
+                            y.label = "Salary", 
+                            legend.main = "Time since Ph.D.")
+```
+
+]
+
+---
+
+# `modelsummary::msummary()`
+
+.small[
+
+```{r tab-m2-m4, message=FALSE}
+library(modelsummary)
+msummary(list("M3 + Interaction" = m4),
+         fmt = "%.1f")  # keep one digit
+```
+
+]
+
+---
+
+# Summary
+
+### Concepts
+
+- What is a statistical model
+
+- Linear/Multiple Regression
+
+    * Centering 
+    
+    * Categorical predictor
+    
+    * Interpretations
+    
+    * Interactions
+
+### Try replicating the examples in the Rmd file

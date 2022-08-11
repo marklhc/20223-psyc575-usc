@@ -2,6 +2,8 @@ project:
   type: website
   render:
     - "*.qmd"
+  resources:
+    - "/slides"
 
 website:
   title: "PSYC 575 Multilevel Modeling (2022 Fall)"
@@ -21,6 +23,7 @@ website:
       title: "Modules"
       contents:
         - modules/week1.qmd
+        - modules/week1b.qmd
 
     - title: "R code"
       contents:
@@ -31,6 +34,7 @@ format:
     theme: cosmo
     css: styles.css
     toc: true
+    df-print: paged
 
 
 

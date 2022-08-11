@@ -1,0 +1,179 @@
+---
+title: "Refresher"
+subtitle: "Multiple Regression"
+execute:
+  echo: false
+params:
+  slides: "1b_review_regression"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Refresher Learning Objectives
+
+By the end of this module, you will be able to
+
+- Identify alternative names for multilevel modeling (MLM)
+- Describe the types of data MLM can handle
+- Knit a simple R Markdown file
+- Review concepts in multiple regression, including model equations, interactions, and interpretations
+
+## Slides
+
+```{r}
+xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html")))
+```
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Statistical Model
+
+```{r}
+add_youtube("axg_AshO7qM")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In the example in the video, why do we need a random component?",
+    answer = "Because people who spend the same amount of time studying do not always have the same mastery level",
+    options = c("Because there is only one predictor",
+                "Because the relation between the variables is linear",
+                "Because people who spend the same amount of time studying do not always have the same mastery level"),
+    type = "radio"
+)
+```
+
+## Import Data
+
+```{r}
+add_youtube("NgjdsKxLMbI")
+```
+
+Check your learning: What is the coding for the `sex` variable?
+
+```{r}
+#| results: asis
+practice_question(
+    "What is the coding for the `sex` variable?",
+    answer = "0 = male, 1 = female",
+    options = c("1 = male, 2 = female",
+                "2 = male, 1 = female",
+                "0 = female, 1 = male",
+                "0 = male, 1 = female"),
+    type = "radio"
+)
+```
+
+```{r}
+add_youtube("UfFhGF3mJGk")
+```
+
+::: {.callout-note icon=false}
+
+Take a pause and look at the scatterplot matrix. Ask yourself the following:
+
+- How does the distribution of `salary` look?
+- Are there more males or females in the data?
+- How would you describe the relationship between number of publications and salary?
+
+:::
+
+## Linear Regression
+
+```{r, echo=FALSE}
+add_youtube("JcmmFSruAZA")
+```
+
+### Sample regression line
+
+```{r, echo=FALSE}
+add_youtube("GIRtlYGVOXk")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "How would you translate the regression line $y = \\beta_0 + \\beta_1 \\text{predictor1}$ into R?",
+    answer = "y ~ predictor1",
+    options = c("y ~ 0 + predictor1",
+                "predictor1 ~ 1 + y",
+                "y ~ predictor1"),
+    type = "radio"
+)
+```
+
+### Centering
+
+```{r}
+add_youtube("s19aoHq53zw")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "The mean of the `pub` variable is 18.2. If we call the mean-centered version of it as `pub_c`, what should be the value of `pub_c` for someone with 10 publications?",
+    answer = " -8.2",
+    options = c(" 8.2", " 1.8", " -8.2", " 1.82"),
+    type = "radio",
+    alignment = TRUE
+)
+```
+
+### Categorical Predictor
+
+```{r}
+add_youtube("k2nNMfJ2Xn0")
+```
+
+```{r echo=FALSE, results="asis"}
+```{r}
+#| results: asis
+practice_question(
+    "In a regression analysis, assume that there is a binary predictor that indicates whether a school is public (coded as 0) or private (coded as 1). If the coefficient for that predictor is 1.5, which category has a higher predicted score?",
+    answer = "private",
+    options = c("private", "public"),
+    type = "radio",
+    alignment = TRUE
+)
+```
+
+## Multiple Regression
+
+```{r}
+add_youtube("O2ob6wC91w0")
+```
+
+::: {.callout-note icon=false}
+
+## Think more
+
+The coefficient of `pub_c` becomes smaller after adding `time` into the equation. Why do you think that is the case?
+
+:::
+
+### Interaction
+
+```{r}
+add_youtube("cqGZD8s5WvU")
+```
+
+```{r}
+add_youtube("vK-2xMftORM")
+```
+
+::: {.callout-note icon=false}
+
+## Pratice yourself
+
+From the interaction model obtain the regression line when `pub` = 50.
+
+:::
+
+:::
