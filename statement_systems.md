@@ -1,14 +1,14 @@
 ## Statement on Academic Conduct and Support Systems
 
-## Academic Conduct:
+### Academic Conduct:
 
 Plagiarism -- presenting someone else's ideas as your own, either verbatim or recast in your own words -- is a serious academic offense with serious consequences. Please familiarize yourself with the discussion of plagiarism in SCampus in Part B, Section 11, "Behavior Violating University Standards" [[policy.usc.edu/scampus-part-b]{.underline}](https://policy.usc.edu/scampus-part-b/). Other forms of academic dishonesty are equally unacceptable. See additional information in SCampus and university policies on [[Research and Scholarship Misconduct]{.underline}](https://policy.usc.edu/research-and-scholarship-misconduct/).
 
-## Students and Disability Accommodations:
+### Students and Disability Accommodations:
 
 USC welcomes students with disabilities into all of the University's educational programs. The Office of Student Accessibility Services (OSAS) is responsible for the determination of appropriate accommodations for students who encounter disability-related barriers. Once a student has completed the OSAS process (registration, initial appointment, and submitted documentation) and accommodations are determined to be reasonable and appropriate, a Letter of Accommodation (LOA) will be available to generate for each course. The LOA must be given to each course instructor by the student and followed up with a discussion. This should be done as early in the semester as possible as accommodations are not retroactive. More information can be found at [[osas.usc.edu]{.underline}](http://osas.usc.edu/). You may contact OSAS at (213) 740-0776 or via email at [[osasfrontdesk@usc.edu]{.underline}](mailto:osasfrontdesk@usc.edu).
 
-## Support Systems:
+### Support Systems:
 
 *Counseling and Mental Health - (213) 740-9355 -- 24/7 on call*
 
