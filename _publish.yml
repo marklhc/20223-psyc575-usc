@@ -1,0 +1,4 @@
+- source: project
+  netlify:
+    - id: c0bb4c5b-eff7-4136-b2c5-61cf655a8c66
+      url: 'https://effortless-cupcake-ca09ba.netlify.app'

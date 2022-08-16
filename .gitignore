@@ -9,6 +9,9 @@
 /.quarto/
 /.vscode/
 
+# generated site
+/_site/
+
 # brms cached files
 brms_cached_*\.rds
 
