@@ -62,7 +62,7 @@ After the successful completion of this course, students will be able to . . .
 
 This class will be in-person and will follow a [flipped course design](https://cet.usc.edu/teaching-resources/flipped-course-design/). The benefit of a flipped course model is that the lecturer can spend more time with students to go through applications of concepts and hands-on exercises of data analyses.
 
-The lecture videos and course materials will be available at https://psyc575-2022fall.netlify.app by 9:00 am of each Monday, and students are expected to review these materials and the assigned readings on their own. Please note that the lecture slides only serve to guide class discussions and cannot replace the assigned readings.
+The lecture videos and course materials will be available at <https://psyc575-2022fall.netlify.app> by 9:00 am of each Monday, and students are expected to review these materials and the assigned readings on their own. Please note that the lecture slides only serve to guide class discussions and cannot replace the assigned readings.
 
 **Students are expected to have reviewed the lecture videos before attending the Tuesday meetings.** The **Tuesday meetings** are structured in two halves: (a) software demonstration by the instructor and (b) quizzes and Q&A sessions. During the **Thursday meetings**, students will complete in-class exercises, which are part of their participation grades.
 
@@ -235,38 +235,38 @@ dates <- paste(
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 |                 |         Topics/Daily Activities         |            Readings            |    Assignment Dates    |
 +=================+=========================================+================================+========================+
-| Week 1\         | - Overview of Multilevel Models         | - SB ch 1, [2][3]              | - Exercise 1           |
+| Week 1\         | - Overview of multilevel models         | - SB ch 1, [2][3]              | - Exercise 1           |
 | Aug 23 & 25     | - R Markdown                            | - [R Markdown Intro][1]        | - Quiz on Regression   |
-|                 | - Review of Regression                  | - [rmarkdown cheatsheet][2]    | - HW 1                 |
+|                 | - Review of regression                  | - [rmarkdown cheatsheet][2]    | - HW 1                 |
 |                 |                                         | - [Gelman et al. ch 1.1,       |                        |
 |                 |                                         | 1.2, 1.4][4]                   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 2\         | - What are Statistical Models?          | - SB ch 3.1--3.4, 4.1--4.5,    | - Exercise 2           |
-| Aug 30 & Sep 1  | - The Random Intercept Model            | 4.8                            | - HW 2                 |
+| Week 2\         | - What are statistical models?          | - SB ch 3.1--3.4, 4.1--4.5,    | - Exercise 2           |
+| Aug 30 & Sep 1  | - The random intercept model            | 4.8                            | - HW 2                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 3\         | - Effect Decomposition                  | - SB ch 4.6, 5.1--5.3          | - Exercise 3           |
-| Sep 6 & 8       | - Random Coefficient Model              |                                | - HW 3                 |
-|                 | - Cross-level Interactions              |                                |                        |
+| Week 3\         | - Effect decomposition                  | - SB ch 4.6, 5.1--5.3          | - Exercise 3           |
+| Sep 6 & 8       | - Random coefficient model              |                                | - HW 3                 |
+|                 | - Cross-level interactions              |                                |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 4\         | - Model Estimation                      | - SB ch 4.7, 6                 | - Exercise 4           |
-| Sep 13 & 15     | - Model Testing                         | - Gelman et al. ch 4.1, 4.2,   | - HW 4a                |
+| Week 4\         | - Model estimation                      | - SB ch 4.7, 6                 | - Exercise 4           |
+| Sep 13 & 15     | - Model testing                         | - Gelman et al. ch 4.1, 4.2,   | - HW 4a                |
 |                 |                                         | 4.4, 4.5                       |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 5\         | - Model Assumptions and Diagnostics     | - SB ch 10                     | - Exercise 5           |
-| Sep 20 & 22     | - Reporting Results                     | - [10 quick tips to improve    | - HW 4b                |
+| Week 5\         | - Model assumptions and diagnostics     | - SB ch 10                     | - Exercise 5           |
+| Sep 20 & 22     | - Reporting results                     | - [10 quick tips to improve    | - HW 4b                |
 |                 |                                         | your regression modeling][5]   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 6\         | - Sample size planning                  | - SB ch 11                     | - Exercise 6           |
 | Sep 27 & 29     |                                         |                                | - HW 5                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 7\         | - MLM for Experimental Designs          | - SB ch 13.1                   | - Exercise 7           |
+| Week 7\         | - MLM for experimental designs          | - SB ch 13.1                   | - Exercise 7           |
 | Oct 4 & 6       | - Cross-classified Models               | - [Hoffman & Rovine (2007)][6] | - HW 6                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 8\         | - Models for Longitudinal Data I        | - SB ch 15                     | - Prospectus           |
+| Week 8\         | - Models for longitudinal data I        | - SB ch 15                     | - Prospectus           |
 | Oct 11 ~~& 13~~ |                                         |                                |                        |
 | (Fall recess)   |                                         |                                |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 9\         | - Models for Longitudinal Data II       | - [Hoffman (2014) ch 4.1][7]   | - Exercise 8           |
+| Week 9\         | - Models for longitudinal data II       | - [Hoffman (2014) ch 4.1][7]   | - Exercise 8           |
 | Oct 18 & 20     |                                         | - [Hoffman (2014) ch 8][8]     | - HW 7                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 10\        | - Causal inference with multilevel data | - TBD                          | - Exercise 9           |

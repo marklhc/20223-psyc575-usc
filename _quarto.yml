@@ -7,7 +7,6 @@ project:
     - "/slides"
     - "!/slides/*.Rmd"
     - "!/slides/slide_settings.RMarkdown"
-    - "!/slides/my-theme.css"
     - "!/slides/img/cp_*"
 
 website:

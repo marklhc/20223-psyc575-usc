@@ -1,5 +1,5 @@
 library(checkdown)
-right_ans <- "Correct :+1:"
+right_ans <- paste("Correct", emo::ji("+1"))
 wrong_ans <- "That is not correct. Rewatch the video if needed"
 
 # Embedding youtube videos
