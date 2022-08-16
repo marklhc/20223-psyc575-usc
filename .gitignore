@@ -7,9 +7,17 @@
 # Local files
 /local_files/
 /.quarto/
+/.vscode/
 
 # brms cached files
 brms_cached_*\.rds
 
 # VS code files
 *\.code-workspace
+
+# Raw slides outputs, libraries
+/slides/libs/
+/slides/*_files/
+/slides/*.html
+/slides/*.pdf
+/slides/img/

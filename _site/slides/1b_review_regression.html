@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Review of Regression Analysis</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Mark Lai" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <script src="libs/clipboard/clipboard.min.js"></script>
+    <link href="libs/shareon/shareon.min.css" rel="stylesheet" />
+    <script src="libs/shareon/shareon.min.js"></script>
+    <link href="libs/xaringanExtra-shareagain/shareagain.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-shareagain/shareagain.js"></script>
+    <script src="libs/kePrint/kePrint.js"></script>
+    <link href="libs/lightable/lightable.css" rel="stylesheet" />
+    <link rel="stylesheet" href="my-theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Review of Regression Analysis
+]
+.subtitle[
+## PSYC 575
+]
+.author[
+### Mark Lai
+]
+.institute[
+### University of Southern California
+]
+.date[
+### 2020/08/04 (updated: 2022-08-11)
+]
+
+---
+
+
+
+
+
+<style>.shareagain-bar {
+--shareagain-foreground: rgb(255, 255, 255);
+--shareagain-background: rgba(0, 0, 0, 0.5);
+--shareagain-twitter: none;
+--shareagain-facebook: none;
+--shareagain-linkedin: none;
+--shareagain-pinterest: none;
+--shareagain-pocket: none;
+--shareagain-reddit: none;
+}</style>
+
+# Statistical Model
+
+.pull-left[
+
+&lt;img src="1b_review_regression_files/figure-html/stat-model-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+]
+
+--
+
+.pull-right[
+
+## A set of statistical assumptions describing how data are generated
+
+- Deterministic/fixed component
+
+`$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots$$`
+
+- Stochastic/random component
+
+`$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots + \color{red}{e_i}$$`
+`$$\color{red}{e_i \sim N(0, \sigma)}$$`
+
+]
+
+???
+
+- It's only a review so I won't go deep. 
+- You may check out the sections in the book by Gelman et al. 
+- Model in OpenBoard
+- Statistical notation
+    * Notation for normal distribution
+    * Important for MLM
+
+---
+
+class: middle, center
+
+# Why Regression?
+
+--
+
+### MLM is an extension of multiple regression to deal with data from multiple levels
+
+---
+
+# Learning Objectives
+
+### Refresh your memory on regression
+
+--
+
+- Describe the statistical model
+
+--
+
+- Write out the model equations
+
+--
+
+- Simulate data based on a regression model
+
+--
+
+- Plot interactions
+
+---
+
+class: inverse, middle, center
+
+# R Demonstration
+
+???
+
+Transition to RStudio
+
+- Data Import
+- Explain the variables
+
+---
+
+# Salary Data
+
+From [Cohen, Cohen, West &amp; Aiken (2003)](https://doi.org/10.4324/9780203774441)
+
+Examine factors related to annual salary of faculty in a university department
+
+--
+
+- time = years after receiving degree
+- pub = # of publications
+- sex = gender (0 = male, 1 = female)
+- citation = # of citations
+- salary = annual salary
+
+---
+
+# Data Exploration
+
+.pull-left[
+
+&lt;img src="1b_review_regression_files/figure-html/salary_dat-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+]
+
+???
+
+Explain what the x axis, y axis, diagonals are
+
+Citation vs salary as an example
+
+--
+
+.pull-right[
+
+- How does the distribution of `salary` look?
+
+- Are there more males or females in the data?
+
+- How would you describe the relationship between number of publications and salary?
+
+]
+
+---
+
+# Simple Linear Regression
+
+### Sample regression line
+
+### Confidence intervals
+
+### Centering
+
+???
+
+- Regression line is only a sample estimate; there is uncertainty
+- Uncertainty measured by standard errors and confidence intervals
+    * Show animations on the varying regression slopes
+    * A function of sample size
+- Centering: Draw picture on changing the x-axis
+- Interpretations: unit increase in `\(x\)` associated with `\(\beta\)` unit increase in `\(y\)`
+
+---
+
+class: inverse, middle, center
+
+# Simulation
+
+See lecture and R code
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With `\(k\)` categories, one needs `\(k - 1\)` dummy variables
+
+The coefficients are differences relative to the reference group
+
+]
+
+--
+
+.pull-right[
+
+
+
+&lt;img src="1b_review_regression_files/figure-html/p2-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+
+]
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With `\(k\)` categories, one needs `\(k - 1\)` dummy variables
+
+The coefficients are differences relative to the reference group
+
+Male = 0
+
+`$$y = \beta_0 + \beta_1 (0) = \beta_0$$`
+
+]
+
+.pull-right[
+
+&lt;img src="1b_review_regression_files/figure-html/p2-1-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+]
+
+---
+
+# Categorical Predictors
+
+.pull-left[
+
+### Dummy Coding
+
+With `\(k\)` categories, one needs `\(k - 1\)` dummy variables
+
+The coefficients are differences relative to the reference group
+
+Male = 0
+
+`$$y = \beta_0 + \beta_1 (0) = \beta_0$$`
+
+Female = 1
+
+`$$y = \beta_0 + \beta_1 (1) = \beta_0 + \beta_1$$`
+
+]
+
+.pull-right[
+
+&lt;img src="1b_review_regression_files/figure-html/p2-2-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+
+]
+
+---
+
+class: inverse, middle, center
+
+# Multiple Regression
+
+---
+
+.pull-left[
+
+# Partial Effects
+
+`$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}^c_i + \beta_2 \text{time}_i + e_i$$`
+
+![](https://github.com/marklhc/marklai-pages/raw/master/static/img/regression_venn.png)
+
+]
+
+???
+
+Transition to R
+
+--
+
+.pull-right[
+
+# Interpretations
+
+### Every unit increase in `\(X\)` is associated with `\(\beta_1\)` unit increase in `\(Y\)`, **when all other predictors are constant**
+
+]
+
+---
+
+# Interactions
+
+### Regression slope of a predictor depends on another predictor
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 \times \text{time}^c \\
+  &amp; \quad + 15 (\text{pub}^c)(\text{time}^c)
+\end{align}`
+
+--
+
+`time` = 7 `\(\Rightarrow\)` `time_c` = 0.21
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 (0.21) \\
+  &amp; \quad + 15 (\text{pub}^c)(0.21) \\
+  &amp; = 54440 + 120 \times \text{pub}^c
+\end{align}`
+
+--
+
+`time` = 15 `\(\Rightarrow\)` `time_c` = 8.21
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 (8.21) \\
+  &amp; \quad + 15 (\text{pub}^c)(8.21) \\
+  &amp; = 62152 + 228 \times \text{pub}^c
+\end{align}`
+
+---
+
+# Interactions
+
+### Regression slope of a predictor depends on another predictor
+
+.pull-left[
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 \times \text{time}^c \\
+  &amp; \quad + 15 (\text{pub}^c)(\text{time}^c)
+\end{align}`
+
+`time` = 7 `\(\Rightarrow\)` `time_c` = 0.21
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 (0.21) \\
+  &amp; \quad + 15 (\text{pub}^c)(0.21) \\
+  &amp; = 54440 + 120 \times \text{pub}^c
+\end{align}`
+
+`time` = 15 `\(\Rightarrow\)` `time_c` = 8.21
+
+`\begin{align}
+  \widehat{\text{salary}} &amp; = 54238 + 105 \times \text{pub}^c + 964 (8.21) \\
+  &amp; \quad + 15 (\text{pub}^c)(8.21) \\
+  &amp; = 62152 + 228 \times \text{pub}^c
+\end{align}`
+
+]
+
+.pull-right[
+
+
+
+&lt;img src="1b_review_regression_files/figure-html/p4-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+]
+
+---
+
+# `modelsummary::msummary()`
+
+.small[
+
+&lt;table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; M3 + Interaction &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; (Intercept) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 54238.1 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (1183.0) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; pub_c &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 104.7 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (98.4) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; time_c &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 964.2 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; (339.7) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; pub_c × time_c &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 15.1 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;box-shadow: 0px 1px"&gt;  &lt;/td&gt;
+   &lt;td style="text-align:center;box-shadow: 0px 1px"&gt; (17.3) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Num.Obs. &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 62 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; R2 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.399 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; R2 Adj. &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.368 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1291.8 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1302.4 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Log.Lik. &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; −640.895 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; F &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 12.817 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; RMSE &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 7465.67 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+]
+
+---
+
+# Summary
+
+### Concepts
+
+- What is a statistical model
+
+- Linear/Multiple Regression
+
+    * Centering 
+    
+    * Categorical predictor
+    
+    * Interpretations
+    
+    * Interactions
+
+### Try replicating the examples in the Rmd file
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"ratio": "16:9",
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

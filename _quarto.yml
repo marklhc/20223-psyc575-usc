@@ -6,6 +6,9 @@ project:
   resources:
     - "/slides"
     - "!/slides/*.Rmd"
+    - "!/slides/slide_settings.RMarkdown"
+    - "!/slides/my-theme.css"
+    - "!/slides/img/cp_*"
 
 website:
   title: "PSYC 575 Multilevel Modeling (2022 Fall)"
