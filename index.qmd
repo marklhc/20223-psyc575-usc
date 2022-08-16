@@ -8,7 +8,7 @@ This is the course website for PSYC 575 in the 2022 Fall semester. The course fo
 
 ## Guide to navigate the course
 
-* [Syllabus](syllabus.qmd), lecture videos, R code, homework instruction: [This course website](/)
+* [Syllabus](syllabus.qmd), lecture videos, R code: [This course website](/)
 * Homework/exercise instruction and submission: [Blackboard](https://blackboard.usc.edu)
 * Course announcement, additional readings: [Slack](https://usc.enterprise.slack.com/)
 * Q & A: [Slack](https://usc.enterprise.slack.com/)

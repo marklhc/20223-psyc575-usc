@@ -2,8 +2,10 @@ project:
   type: website
   render:
     - "*.qmd"
+    - "!/codes/rcode3.qmd"
   resources:
     - "/slides"
+    - "!/slides/*.Rmd"
 
 website:
   title: "PSYC 575 Multilevel Modeling (2022 Fall)"
@@ -14,9 +16,7 @@ website:
       - text: "Syllabus"
         file: syllabus.qmd
       - sidebar:modules
-      - text: "R code"
-        file: codes/rcode3.qmd
-      - about.qmd
+      - sidebar:codes
 
   sidebar:
     - id: modules
@@ -25,9 +25,12 @@ website:
         - modules/week1.qmd
         - modules/week1b.qmd
 
-    - title: "R code"
+    - id: codes
+      title: "R code"
       contents:
-        - codes/rcode3.qmd
+        - codes/rcode1.qmd
+        - codes/rcode1b.qmd
+        # - codes/rcode3.qmd
 
 format:
   html:

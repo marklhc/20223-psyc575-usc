@@ -60,7 +60,7 @@ After the successful completion of this course, students will be able to . . .
 
 ## Course Notes
 
-This class will be in-person and will follow a [flipped course design](https://cet.usc.edu/wp-content/uploads/2021/05/flipped-course-model.docx). The benefit of a flipped course model is that the lecturer can spend more time with students to go through applications of concepts and hands-on exercises of data analyses.
+This class will be in-person and will follow a [flipped course design](https://cet.usc.edu/teaching-resources/flipped-course-design/). The benefit of a flipped course model is that the lecturer can spend more time with students to go through applications of concepts and hands-on exercises of data analyses.
 
 The lecture videos and course materials will be available at https://psyc575-2022fall.netlify.app by 9:00 am of each Monday, and students are expected to review these materials and the assigned readings on their own. Please note that the lecture slides only serve to guide class discussions and cannot replace the assigned readings.
 
@@ -80,7 +80,7 @@ To promote independence and critical thinking, students are encouraged to work t
 - consult a classmate;
 - post your questions on the Q&A channel on Slack;
 - meet with the instructor during office hours or Q&A sessions on Tuesdays;
-- for personal questions, email the instructor at hokchiol\@usc.edu
+- for personal questions, email the instructor at [hokchiol\@usc.edu](mailto:hokchiol@usc.edu)
 
 ## Technological Proficiency and Hardware/Software Required
 
@@ -105,7 +105,7 @@ If you need a laptop to successfully participate in this class, you may be eligi
 - (Alternative text) Hox, J. J., Moerbeek, M., & van de Schoot, R. (2018). *Multilevel analysis: Techniques and Applications* (3rd ed.). New York, NY: Routledge.
 - Other required readings will be posted on Slack
 
-### Optional
+### References
 
 - Raudenbush, S. W., & Bryk, A. S. (2002). *Hierarchical linear models: applications and data analysis methods* (2nd ed.). Thousand Oaks, CA: Sage.
 - Gelman, A., & Hill, J. (2006). *Data analysis using regression and multilevel/hierarchical models.* Cambridge, UK: Cambridge University Press.
@@ -122,31 +122,32 @@ If you need a laptop to successfully participate in this class, you may be eligi
 2.  Homework problems (60%). There will be 10 homework assignments for students to apply the concepts and techniques discussed in class to analytic problems. The assignments typically involve performing data analyses using data sets of your own or provided by the instructor, and interpreting the results with some guided questions.\
     You must submit your work electronically to Blackboard by the assigned due date. See policy on [late work](#late-work).
 
-3.  Final project (30%: 5% prospectus, 5% peer review, 20% presentation/final paper). You will complete a research project related to multilevel modeling, typically a research report of an empirical study using real data or a theoretical/methodological paper about certain aspects of multilevel modeling. Students interested in other project ideas (e.g., software package development) should discuss their ideas with the instructor. Each student can choose to work on their own or in a group of up to three people. Each student/group will schedule an appointment with the instructor to talk about their project during weeks 9 and 10 (October 17--28).
+3.  Final project (28%: 5% prospectus, 3% peer review, 20% presentation/final paper). You will complete a research project related to multilevel modeling, typically a research report of an empirical study using real data or a theoretical/methodological paper about certain aspects of multilevel modeling. Students interested in other project ideas (e.g., software package development) should discuss their ideas with the instructor. Each student can choose to work on their own or in a group of up to three people. Each student/group will schedule an appointment with the instructor to talk about their project during weeks 9 and 10 (October 17--28).
 
     There are three grading components for your final project:
 
     - Prospectus (5%)\
-        A prospectus about your project should be submitted by [**the day before the individual meeting**]{style="color:red"}. The prospectus should contain a concise description of what you (or your group) plan to do for your project, including a preliminary plan for statistical analysis. The prospectus should be limited to 1 single-spaced page (excluding tables, figures, references, and other supplemental materials).
+        A prospectus about your project should be submitted by **Monday, October 17**. The prospectus should contain a concise description of what you (or your group) plan to do for your project, including a preliminary plan for statistical analysis. The prospectus should be limited to 1 single-spaced page (excluding tables, figures, references, and other supplemental materials).
 
-    - Peer Review (5%)\
-        After the individual meeting with the instructor, each individual/group will refine their research questions and post a summary of their research questions and preliminary analyses to Slack by **Friday, November 4**. Each student will then give specific comments to the analyses of other students/groups by **Monday, November 14**. More information on what feedback to give will be included in the grading rubric.
+    - Peer Review (3%)\
+        After the individual meeting with the instructor, each individual/group will refine their research questions and post a summary of their research questions and preliminary analyses by **Friday, November 4**. Each student will then give specific comments to the analyses of other students/groups by **Monday, November 14**. More information on what feedback to give will be included in the grading rubric.
 
     - Final Presentation/Paper (20%)\
-        If you choose to do a final paper, your paper will be due **Tuesday, December 13, at 10:00 am Pacific Time** (the assigned final exam time for the class). The final paper should include four sections: introduction, method, results, and discussion, or comparable sections; however, **more emphasis should be put on describing the technical details of the analysis and the interpretations of the results**. There should also be a link to the reproducible codes for your analyses. The final paper should be 8-15 double-spaced pages of text (i.e., excluding title page, abstract, references, tables, figures, and appendices).
+        If you choose to do a final paper, your paper will be due **Tuesday, December 13, at 10:00 am Pacific Time** (the assigned final exam time for the class). The final paper should include four sections: introduction, method, results, and discussion, or comparable sections; however, **more emphasis should be put on describing the technical details of the analysis and the interpretations of the results**. There should also be a link to the reproducible codes for your analyses. The final paper should be 8-15 double-spaced pages of text (i.e., excluding the title page, abstract, references, tables, figures, and appendices).
 
 ## Participation
 
-Participation accounts for 10% of the course grade. To earn full credit for participation, students should complete and turn in all in-class exercises.
+Participation accounts for 12% of the course grade. To earn full credit for participation, students should complete and turn in all in-class exercises.
 
 ## Grading Breakdown
 
 | Assignment               | \% of Grade |
 |--------------------------|-------------|
-| In-class exercises       | 10          |
+| In-class exercises       | 12          |
 | Homework 1-10            | 60          |
 | Prospectus               | 5           |
-| Final Presentation/Paper | 25          |
+| Peer review              | 3           |
+| Final presentation/paper | 25          |
 | **TOTAL**                | 100         |
 
 ## Grading Scale
@@ -168,11 +169,11 @@ Course final grades will be determined using the following scale
 
 ### Assignment Submission
 
-The assignments should be submitted through Blackboard by Fridays. If needed, students can submit the homework before Sunday at 10:00 pm, without any penalty.
+The assignments should be submitted through Blackboard by Fridays. If needed, students can submit the homework before Sunday at 5:00 pm, without any penalty.
 
 ### Grading Timeline
 
-Generally, all graded work will be returned no later than one week from the submission deadline. However, given the high number of students in the class, the instructor may only grade selected questions in each assignment. Solutions will be posted so that students can check their own work.
+Generally, all graded work will be returned no later than one week from the submission deadline. However, given the high number of students in the class, the instructor may only grade selected questions in each assignment. Solutions will be posted so that students can check their work.
 
 ### Late work {#late-work}
 
@@ -186,7 +187,7 @@ Your phone should be turned off or in silent mode (not on vibrate), and should n
 
 #### Tablets and Laptops
 
-During lecture time in the classroom, students can use tablets and laptops only for purposes of viewing course materials and taking notes. Use of tablets and laptops for note taking is strongly discouraged as it may distract both yourself and your peers ([Sana, Weston, & Cepeda, 2013](https://www.sciencedirect.com/science/article/pii/S0360131512002254)). During the in-class exercises, students should use their laptops to complete the assignments.
+During lecture time in the classroom, students can use tablets and laptops only for purposes of viewing course materials and taking notes. During the in-class exercises, students should use their laptops to complete the assignments.
 
 ### Attendance
 
@@ -210,7 +211,7 @@ The following applies to both in-person and online communications (e.g., Slack d
 
 ### Course Evaluation
 
-Student feedback is essential to the instructor and the Department to keep improving this course. Students are encouraged to share their feedback and suggestions in an early-term feedback survey around week 4 to 5, and respond to the standard USC course evaluation survey at the end of the semester.
+Student feedback is essential for the instructor and the Department to keep improving this course. Students are encouraged to share their feedback and suggestions in an early-term feedback survey around week 4 to 5, and respond to the standard USC course evaluation survey at the end of the semester.
 
 ## (Tentative) Course Schedule: A Weekly Breakdown
 
@@ -256,12 +257,12 @@ dates <- paste(
 |                 |                                         | your regression modeling][5]   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 6\         | - Sample size planning                  | - SB ch 11                     | - Exercise 6           |
-| Sep 27 & 39     |                                         |                                | - HW 5                 |
+| Sep 27 & 29     |                                         |                                | - HW 5                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 7\         | - MLM for Experimental Designs          | - SB ch 13.1                   | - Exercise 7           |
 | Oct 4 & 6       | - Cross-classified Models               | - [Hoffman & Rovine (2007)][6] | - HW 6                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 8\         | - Models for Longitudinal Data I        | - SB ch 15                     |                        |
+| Week 8\         | - Models for Longitudinal Data I        | - SB ch 15                     | - Prospectus           |
 | Oct 11 ~~& 13~~ |                                         |                                |                        |
 | (Fall recess)   |                                         |                                |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
@@ -273,9 +274,10 @@ dates <- paste(
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 11\        | - Multilevel logistic regression        | - SB ch 17.1--17.3             | - Exercise 10          |
 | Nov 1 & Nov 3   |                                         |                                | - HW 9                 |
+|                 |                                         |                                | - Preliminary analysis |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 12\        | - Topic chosen by students              | - TBD                          | - Exercise 11          |
-| Nov 8 & 10      | (other discrete outcomes/               |                                |                        |
+| Nov 8 & 10      | (other discrete outcomes/               |                                | - Peer review          |
 |                 | measurement issues/meta-analytic models |                                |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 13\        | - Missing data                          | - SB ch 9                      | - Exercise 12          |

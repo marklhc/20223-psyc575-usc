@@ -97,7 +97,7 @@ add_youtube("4fl2chIkDy4")
 
 ::: {.callout-tip appearance="simple"}
 
-Another example that relates to ecological fallacies is the ["happiness paradox"](https://esrc.ukri.org/about-us/50-years-of-esrc/50-achievements/the-easterlin-paradox/) in economics, which says that income is related to happiness in a cross-sectional analysis (i.e., between-person level) but not in a longitudinal/time series analysis (i.e., within-person level).
+Another example that relates to ecological fallacies is the ["happiness paradox"](https://www.pnas.org/doi/10.1073/pnas.1015962107) in economics, which says that income is related to happiness in a cross-sectional analysis (i.e., between-person level) but not in a longitudinal/time series analysis (i.e., within-person level).
 
 :::
 

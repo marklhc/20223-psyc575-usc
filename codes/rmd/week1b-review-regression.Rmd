@@ -1,0 +1,396 @@
+---
+title: "Introduction to R Markdown"
+author: "Your Name"
+output:
+  html_document:
+    toc: false
+    toc_float: false
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">#")
+```
+
+## Load Packages and Import Data
+
+You can use add the `message = FALSE` option to suppress the package loading messages
+
+```{r load-pkg, message = FALSE}
+# To install a package, run the following ONCE (and only once on your computer)
+# install.packages("psych")
+library(psych, include.only = "pairs.panels") # for scatterplot matrix
+library(here) # makes reading data more consistent
+library(tidyverse) # for data manipulation and plotting
+library(car) # some useful functions for regression
+library(modelsummary) # for making tables
+library(sjPlot) # for plotting slopes
+library(interactions) # for plotting interactions
+```
+
+### Import Data
+
+First, download the data file `salary.txt` from <https://raw.githubusercontent.com/marklhc/marklai-pages/master/data_files/salary.txt>, and import the data. A robust way to do so is to download the data to a folder called `data_files` under the project directory, and then use the `here` package. This avoids a lot of data import 
+issues that I've seen. 
+
+[P.S.]: # (You can hide the output by adding `results = 'hide'`)
+
+```{r salary_dat, results = 'hide'}
+# The `here()` function forces the use of the project directory
+here("data_files", "salary.txt")
+# Read in the data
+salary_dat <- read.table(here("data_files", "salary.txt"), header = TRUE)
+```
+
+Alternatively, from the menu, click `File` &rightarrow; `Import Dataset` &rightarrow; `From Text (base)...`, and select the file. 
+
+```{r show-salary_dat}
+# Show the data
+salary_dat
+```
+
+You can see the description of the variables here: <https://rdrr.io/cran/MBESS/man/prof.salary.html>
+
+## Quick Scatterplot Matrix
+
+Import to screen your data before any statistical modeling
+
+[P.S.]: # (You can hide the input by adding `echo = FALSE`)
+
+```{r pairs-salary_dat}
+pairs.panels(salary_dat[, -1], # not plotting the first column
+    ellipses = FALSE
+)
+```
+
+## 1. Linear Regression of `salary` on `pub`
+
+### Visualize the data
+
+```{r p1-smooth}
+# Visualize the data ("gg" stands for grammar of graphics)
+p1 <- ggplot(
+    salary_dat, # specify data
+    # aesthetics: mapping variable to axes)
+    aes(x = pub, y = salary)
+) +
+    # geom: geometric objects, such as points, lines, shapes, etc
+    geom_point()
+# Add a smoother geom to visualize mean salary as a function of pub
+p1 + geom_smooth()
+```
+
+A little bit of non-linearity on the plot. Now fit the regression model
+
+### Linear regression
+
+You can type equations (with LaTeX; see a [quick reference](https://www.latex-tutorial.com/tutorials/amsmath/)). 
+
+P.S. Use `\text{}` to specify variable names
+
+P.S. Pay attention to the subscripts
+
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}_i + e_i$$
+
+- Outcome: `salary`
+- Predictor: `pub`
+- $\beta_0$: regression intercept
+- $\beta_1$: regression slope
+- $e$: error
+
+```{r m1}
+# left hand side of ~ is outcome; right hand side contains predictors
+# salary ~ (beta_0) * 1 + (beta_1) * pub
+# remove beta_0 and beta_1 to get the formula
+m1 <- lm(salary ~ 1 + pub, data = salary_dat)
+# In R, the output is not printed out if it is saved to an object (e.g., m1).
+# Summary:
+summary(m1)
+```
+
+### Visualize fitted regression line:
+
+```{r p1-fitted}
+p1 +
+    # Non-parametric fit
+    geom_smooth(se = FALSE) +
+    # Linear regression line (in red)
+    geom_smooth(method = "lm", col = "red")
+```
+
+### Confidence intervals
+
+```{r confint-m1}
+# Confidence intervals
+confint(m1)
+```
+
+### Interpretations
+
+> Based on our model, faculty with one more publication have predicted salary of $350.8, 95% CI [$196.4, $505.2], higher than those with one less publication. 
+
+But what do the confidence intervals and the standard errors mean? To understanding what exactly a regression model is, let's run some simulations.
+
+### Centering
+
+So that the intercept refers to a more meaningful value. It's a major issue in multilevel modeling. 
+
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}^c_i + e_i$$
+
+```{r m1c}
+# Using pipe operator
+salary_dat <- salary_dat %>%
+    mutate(pub_c = pub - mean(pub))
+# Equivalent to:
+# salary_dat <- mutate(salary_dat,
+#                      pub_c = pub - mean(pub))
+m1c <- lm(salary ~ pub_c, data = salary_dat)
+summary(m1c)
+```
+
+The only change is the intercept coefficient
+
+```{r p1-center}
+p1 +
+    geom_smooth(method = "lm", col = "red") +
+    # Intercept without centering
+    geom_vline(aes(col = "Not centered", xintercept = 0)) +
+    # Intercept with centering
+    geom_vline(aes(col = "Centered", xintercept = mean(salary_dat$pub))) +
+    labs(col = "")
+```
+
+## 2. Categorical Predictor 
+
+Recode `sex` as `factor` variable in R (which allows R to automatically do dummy coding). This should be done in general for categorical predictors. 
+
+```{r recode-sex}
+salary_dat <- salary_dat %>%
+    mutate(sex = factor(sex,
+        levels = c(0, 1),
+        labels = c("male", "female")
+    ))
+```
+
+$$\text{salary}_i = \beta_0 + \beta_1 \text{sex}_i + e_i$$
+
+```{r p2}
+(p2 <- ggplot(salary_dat, aes(x = sex, y = salary)) +
+    geom_boxplot() +
+    geom_jitter(height = 0, width = 0.1)) # move the points to left/right a bit
+```
+
+```{r m2}
+m2 <- lm(salary ~ sex, data = salary_dat)
+summary(m2)
+```
+
+The `(Intercept)` coefficient is for the '0' category, i.e., predicted salary for males; the `female` coefficient is the difference between males and females.
+
+Predicted female salary = 56515 + (-3902) = 52613.
+
+### Equivalence to the $t$-test
+
+When assuming homogeneity of variance
+
+```{r t-test}
+t.test(salary ~ sex, data = salary_dat, var.equal = TRUE)
+```
+
+## 3. Multiple Predictors (Multiple Regression)
+
+Now add one more predictor, `time`
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}^c_i + \beta_2 \text{time}_i + e_i$$
+
+```{r p3}
+ggplot(salary_dat, aes(x = time, y = salary)) +
+    geom_point() +
+    geom_smooth()
+```
+
+```{r m3}
+m3 <- lm(salary ~ pub_c + time, data = salary_dat)
+summary(m3) # summary
+confint(m3) # confidence interval
+```
+
+The regression coefficients are the *partial* effects. 
+
+![](https://github.com/marklhc/marklai-pages/raw/master/static/img/regression_venn.png)
+
+### Plotting
+
+The `sjPlot::plot_model()` function is handy
+
+```{r plot-m3}
+sjPlot::plot_model(m3,
+    type = "pred", show.data = TRUE,
+    title = "" # remove title
+)
+```
+
+### Interpretations
+
+> Faculty who have worked *longer* tended to have *more* publications
+> **For faculty who graduate around the same time**, a difference of 1 publication is associated with an estimated difference in salary of \$133.0, 95\% CI [\$-52.6, \$318.6], which was not significant. 
+
+### Diagnostics
+
+```{r m3-diagnostics}
+car::mmps(m3) # marginal model plots for linearity assumptions
+```
+
+The red line is the implied association based on the model, whereas the blue line is a non-parametric smoother not based on the model. If the two lines show big discrepancies (especially if in the middle), it may suggest the linearity assumptions in the model does not hold.
+
+### Effect size
+
+```{r r2}
+# Extract the R^2 number (it's sometimes tricky to
+# figure out whether R stores the numbers you need)
+summary(m3)$r.squared
+# Adjusted R^2
+summary(m3)$adj.r.squared
+```
+
+Proportion of predicted variance: $R^2$ = `r round(summary(m3)$r.squared, 2) * 100`%, adj. $R^2$ = `r round(summary(m3)$adj.r.squared, 2) * 100`%. 
+
+## 4. Interaction
+
+For interpretation purposes, it's recommended to center the predictors (at least the continuous ones)
+
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}^c_i + \beta_2 \text{time}^c_i + \beta_3 (\text{pub}^c_i)(\text{time}^c_i) + e_i$$
+
+```{r m4}
+salary_dat <- salary_dat %>%
+    mutate(time_c = time - mean(time))
+# Fit the model with interactions:
+m4 <- lm(salary ~ pub_c * time_c, data = salary_dat)
+summary(m4) # summary
+```
+
+### Interaction Plots
+
+Interpreting interaction effects is hard. Therefore, 
+
+> Always plot the interaction to understand the dynamics
+
+```{r interaction-plot}
+interactions::interact_plot(m4,
+    pred = "pub_c",
+    modx = "time_c",
+    # Insert specific values to plot the slopes.
+    # Pay attention that `time_c` has been centered
+    modx.values = c(1, 7, 15) - 6.79,
+    modx.labels = c(1, 7, 15),
+    plot.points = TRUE,
+    x.label = "Number of publications (mean-centered)",
+    y.label = "Salary",
+    legend.main = "Time since Ph.D."
+)
+```
+
+Another approach is to plug in numbers to the equation:
+$$\widehat{\text{salary}} = \hat \beta_0 + \hat \beta_1 \text{pub}^c + \hat \beta_2 \text{time}^c + \hat \beta_3 (\text{pub}^c)(\text{time}^c)$$
+For example, consider people who've graduated for seven years, i.e., `time` = 7. First, be careful that in the model we have `time_c`, and `time` = 7 corresponds to `time_c` = `r 7 - mean(salary_dat$time)` years. So if we plug that into the equation, 
+$$\widehat{\text{salary}} |_{\text{time} = 7} = \hat \beta_0 + \hat \beta_1 \text{pub}^c + \hat \beta_2 (0.21) + \hat \beta_3 (\text{pub}^c)(0.21)$$
+Combining terms with pub^c^, 
+$$\widehat{\text{salary}} |_{\text{time} = 7} = [\hat \beta_0 + \hat \beta_2 (0.21)] + [\hat \beta_1 + \hat \beta_3 (0.21)] (\text{pub}^c)$$
+Now plug in the numbers for $\hat \beta_0$, $\hat \beta_1$, $\hat \beta_2$, $\hat \beta_3$, 
+
+```{r int-slope-7}
+# beta0 + beta2 * 0.21
+54238.08 + 964.17 * 0.21
+# beta1 + beta3 * 0.21
+104.72 + 15.07 * 0.21
+```
+
+resulting in 
+$$\widehat{\text{salary}} |_{\text{time} = 7} = 54440.6 + 107.9 (\text{pub}^c), $$
+which is the regression line for `time` = 7. Note, however, when an interaction is present, the regression slope will be different with a different value of `time`. So remember that
+
+> An interaction means that the regression slope of a predictor depends on another predictor. 
+
+We will further explore this in the class exercise this week. 
+
+## 5. Tabulate the Regression Results
+
+```{r tab-m1-m4}
+msummary(list(
+    "M1" = m1,
+    "M2" = m2,
+    "M3" = m3,
+    "M3 + Interaction" = m4
+),
+fmt = "%.1f" # keep one digit
+)
+```
+
+## Bonus: Matrix Form of Regression
+
+The regression model can be represented more succintly in matrix form:
+$$\mathbf y = \mathbf X \boldsymbol \beta + \mathbf e,$$
+where $\mathbf y$ is a column vector (which can be considered a $N \times 1$ matrix). For example, for our data
+
+```{r head-y}
+head(salary_dat)
+```
+
+So
+$$\mathbf y = \begin{bmatrix}
+            51,876 \\
+            54,511 \\
+            53,425 \\
+            \vdots
+          \end{bmatrix}$$
+$\mathbf X$ is the predictor matrix (sometimes also called the design matrix), where the first column is the constant 1, and each subsequent column represent a predictor. You can see this in R
+
+```{r predictor-matrix}
+head(
+    model.matrix(m3)
+)
+```
+
+The coefficient $\boldsymbol \beta$ is a vector, with elements $\beta_0, \beta_1, \ldots$. The least square estimation method is used to find estimates of $\beta$ that minimizes the sum of squared differences between $\mathbf y$ and $\mathbf X \hat{\boldsymbol \beta}$, which can be written as
+$$(\mathbf y - \mathbf X \boldsymbol \beta)^\top(\mathbf y - \mathbf X \boldsymbol \beta).$$
+The above means that: for each value observation, subtract the predicted value of $y$ from the observed $y$ (i.e., $y_i - \beta_0 + \beta_1 x_{1i} + \ldots$), then squared the value ($[y_i - \beta_0 + \beta_1 x_{1i} + \ldots]^2$), then sum these squared values across observations. Or sometimes you'll see it written as
+$$\lVert\mathbf y - \mathbf X \boldsymbol \beta\rVert^2$$
+It can be shown that the least square estimates can be obtained as
+$$(\mathbf X^\top \mathbf X)^{-1} \mathbf X^\top \mathbf y$$
+You can do the matrix form in R:
+
+```{r lm-matrix}
+y <- salary_dat$salary
+X <- model.matrix(m3)
+# beta = (X'X)^{-1} X'y
+# solve() is matrix inverse; t(X) is the transpose of X; use `%*%` for matrix multiplication
+(betahat <- solve(t(X) %*% X, t(X) %*% y)) # same as the coefficients in m3
+# Sum of squared residual
+sum((y - X %*% betahat)^2)
+# Root mean squared residual (Residual standard error)
+sqrt(sum((y - X %*% betahat)^2) / 59) # same as in R
+```
+
+## Bonus: More Options in Formatting Tables
+
+Here's some code you can explore to make the table output from `msummary()` to look more lik APA style (with an example here: <https://apastyle.apa.org/style-grammar-guidelines/tables-figures/sample-tables#regression>). However, for this course I don't recommend spending too much time on tailoring the tables; something clear and readable will be good enough. 
+
+```{r tab-tailored}
+# Show confidence intervals and p values
+msummary(
+    list(
+        "Estimate" = m4,
+        "95% CI" = m4,
+        "p" = m4
+    ),
+    estimate = c("estimate", "[{conf.low}, {conf.high}]", "p.value"),
+    statistic = NULL,
+    # suppress gof indices (e.g., R^2)
+    gof_omit = ".*",
+    # Rename the model terms ("current name" = "new name")
+    coef_rename = c(
+        "(Intercept)" = "Intercept",
+        "pub_c" = "Number of publications",
+        "time_c" = "Time since PhD",
+        "pub_c:time_c" = "Publications x Time"
+    )
+)
+```
