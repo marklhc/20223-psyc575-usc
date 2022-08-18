@@ -3,7 +3,7 @@ title: "R Codes (Week 1)"
 format:
   html:
     code-tools:
-      source: rmd/week1-rmarkdown-regression.Rmd
+      source: week1-rmarkdown-regression.Rmd
       toggle: false
       caption: Download Rmd
 params:

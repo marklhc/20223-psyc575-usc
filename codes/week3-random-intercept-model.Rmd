@@ -23,11 +23,10 @@ library(lattice)  # for dotplot (working with lme4)
 library(sjPlot)  # for plotting effects
 library(MuMIn)  # for computing r-squared
 library(r2mlm)  # for computing r-squared
-# library(broom.mixed)  # for summarizing results
 library(modelsummary)  # for making tables
 ```
 
-In R, there are many packages for multilevel modeling, two of the most common ones are the `lme4` package and the `nlme` package. In this note I will show how to run different basic multilevel models using the `lme4` package, which is newer. However, some of the models, like unstructured covariance structure, will need the `nlme` package or other packages (like the `brms` and the `rstanarm` packages with Bayesian estimation).
+In R, there are many packages for multilevel modeling; two of the most common ones are the `lme4` package and the `nlme` package. In this note, I will show how to run different basic multilevel models using the `lme4` package, which is newer. However, some models, like unstructured covariance structure, will need the `nlme` package or other packages (like the `brms` package with Bayesian estimation).
 
 ### Import Data
 
@@ -44,7 +43,7 @@ hsball # print the data
 
 ### Model equations
 
-[P.S.]: # (Pay attention to the need of curly braces '{}' when there are more than one subscripts.) 
+[P.S.]: # (Pay attention to the need for curly braces '{}' when there are more than one subscript.) 
 
 Lv-1:
 $$\text{mathach}_{ij} = \beta_{0j} + e_{ij}$$
@@ -56,7 +55,7 @@ where $\gamma_{00}$ is the grand mean, and $u_{0j}$ is the deviation of the mean
 
 ### Running the model in R
 
-The `lme4` package require input in the format of 
+The `lme4` package requires input in the format of 
 ```r
 outcome ~ fixed + (random | cluster ID)
 ``` 
@@ -95,6 +94,7 @@ summary(ran_int)
 # fixed = gamma_{00} * 1
 # random = u_{0j} * 1, with j indexing school id
 ran_int_brm <- brm(mathach ~ 1 + (1 | id), data = hsball,
+                   # cache results as brms takes a long time to run
                    file = "brms_cached_ran_int")
 # Summarize results
 summary(ran_int_brm)
@@ -114,9 +114,7 @@ random_ids <- sample(unique(hsball$id), size = 10)
     geom_jitter(height = 0, width = 0.1, alpha = 0.3) +
     # Add school means
     stat_summary(
-        fun = "mean",
-        geom = "point",
-        col = "red",
+        fun = "mean", geom = "point", col = "red",
         shape = 17, # use triangles
         size = 4 # make them larger
     )
@@ -153,7 +151,7 @@ p_subset %+%
     (simulated_data2 %>%
         filter(id %in% random_ids))
 # Simulate with gamma00 + u_0j + e_ij
-# First, obtain group indices that starts from 1 to 160
+# First, obtain group indices that start from 1 to 160
 group_idx <- group_by(hsball, id) %>% group_indices()
 # Then simulate 160 u0j
 u0j <- rnorm(num_schools, sd = tau0)
@@ -191,7 +189,7 @@ You can easily plot the estimated school means (also called BLUP, best linear un
 dotplot(ranef(ran_int, condVar = TRUE))
 ```
 
-Here's a plot showing the sample schools means (with no borrowing of information) vs. the EB means (borrowing information). 
+Here's a plot showing the sample school means (with no borrowing of information) vs. the EB means (borrowing information). 
 
 ```{r eb-vs-ols, fig.asp = 1}
 # Compute raw school means and EB means
@@ -225,13 +223,12 @@ between_var <- variance_components$vcov[1]
 within_var <- variance_components$vcov[2]
 (icc <- between_var / (between_var + within_var))
 # 95% confidence intervals (require installing the bootmlm package)
-# if (!require("devtools")) {
-#   install.packages("devtools")
+# if (!require("remotes")) {
+#   install.packages("remotes")
 # }
-# devtools::install_github("marklhc/bootmlm")
+# remotes::install_github("marklhc/bootmlm")
 bootmlm:::prof_ci_icc(ran_int)
 ```
-
 
 ## Adding Lv-2 Predictors
 
@@ -253,7 +250,11 @@ $$\text{mathach}_{ij} = \beta_{0j} + e_{ij}$$
 Lv-2:
 
 $$\beta_{0j} = \gamma_{00} + \gamma_{01} \text{meanses}_j + u_{0j}$$
-where $\gamma_{00}$ is the grand *intercept*, $\gamma_{10}$ is the regression coefficient of `meanses` that represents the expected difference in school mean achievement between two schools with one unit difference in `meanses`, and and $u_{0j}$ is the deviation of the mean of the $j$th school from the grand mean.
+where $\gamma_{00}$ is the grand *intercept*, $\gamma_{10}$ is the regression coefficient of `meanses` that represents the expected difference in school mean achievement between two schools with one unit difference in `meanses`, and $u_{0j}$ is the deviation of the mean of the $j$th school from the grand mean.
+
+::: {.panel-tabset}
+
+#### `lme4`
 
 ```{r m_lv2}
 m_lv2 <- lmer(mathach ~ meanses + (1 | id), data = hsball)
@@ -262,6 +263,17 @@ summary(m_lv2)
 # `parm = "beta_"` requests confidence intervals only for the fixed effects
 confint(m_lv2, parm = "beta_")
 ```
+
+#### `brms`
+
+```{r m_lv2_brm}
+m_lv2_brm <- brm(mathach ~ meanses + (1 | id), data = hsball,
+                 # cache results as brms takes a long time to run
+                 file = "brms_cached_m_lv2")
+summary(m_lv2_brm)
+```
+
+:::
 
 The 95% confidence intervals (CIs) above showed the uncertainty associated with the estimates. Also, as the 95% CI for `meanses` does not contain zero, there is evidence for the positive association of SES and `mathach` at the school level.
 
@@ -285,7 +297,7 @@ sjPlot::plot_model(m_lv2,
 
 ### Proportion of variance predicted
 
-We will use the $R^2$ statistic proposed by [Nakagawa, Johnson & Schielzeth (2017)](https://doi.org/10.1098/rsif.2017.0213) to obtain an $R^2$ statistic. There are multiple versions of $R^2$ in the literature, but personally I think this $R^2$ avoids many of the problems in other variants and is most meaningful to interpret. Note that I only interpret the marginal $R^2$. 
+We will use the $R^2$ statistic proposed by [Nakagawa, Johnson & Schielzeth (2017)](https://doi.org/10.1098/rsif.2017.0213) to obtain an $R^2$ statistic. There are multiple versions of $ R^2 $ in the literature, but personally this $ R^2 $ avoids many of the problems in other variants and is most meaningful to interpret. Note that I only interpret the marginal $R^2$.
 
 ```{r r2-m_lv2}
 # Generally, you should use the marginal R^2 (R2m) for the variance predicted by

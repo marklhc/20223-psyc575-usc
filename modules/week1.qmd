@@ -13,7 +13,7 @@ source("../helper.R")
 source("../render_slides.R", local = TRUE)
 ```
 
-Before you start the materials for week 1, make sure you have reviewed the [syllabus](/syllabus.qmd).
+Before starting the materials for week 1, make sure you have reviewed the [syllabus](/syllabus.qmd).
 
 # Week Learning Objectives
 
@@ -22,7 +22,6 @@ By the end of this module, you will be able to
 - Identify alternative names for multilevel modeling (MLM)
 - Describe the types of data MLM can handle
 - Knit a simple R Markdown file
-- Review concepts in multiple regression, including model equations, interactions, and interpretations
 
 ## Task Lists
 
@@ -97,7 +96,7 @@ add_youtube("4fl2chIkDy4")
 
 ::: {.callout-tip appearance="simple"}
 
-Another example that relates to ecological fallacies is the ["happiness paradox"](https://www.pnas.org/doi/10.1073/pnas.1015962107) in economics, which says that income is related to happiness in a cross-sectional analysis (i.e., between-person level) but not in a longitudinal/time series analysis (i.e., within-person level).
+Another example that relates to ecological fallacies is the ["happiness paradox"](https://www.pnas.org/doi/10.1073/pnas.1015962107) in economics, which says that income is related to happiness in cross-sectional analysis (i.e., between-person level) but not in a longitudinal/time series analysis (i.e., within-person level).
 
 :::
 
@@ -111,9 +110,5 @@ practice_question(
     alignment = TRUE
 )
 ```
-
-## Review of Regression
-
-If you need a refresher on multiple regression, please check out [this module](week1b.qmd).
 
 :::

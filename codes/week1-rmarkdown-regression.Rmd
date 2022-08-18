@@ -72,7 +72,7 @@ See <https://twitter.com/visnut/status/1248087845589274624>
 
 1. Download the data file `salary.txt` from <https://raw.githubusercontent.com/marklhc/marklai-pages/master/data_files/salary.txt>
 
-2. Create folder named `data_files` in your project
+2. Create a folder named `data_files` in your project
 
 3. Run the following
 
@@ -198,12 +198,19 @@ Download the Rmd file for the exercise on Blackboard
 1. Complete Ex1 above.
 2. Complete Ex2 above.
 3. Type this equation in LaTeX: <https://wikimedia.org/api/rest_v1/media/math/render/svg/2898c190bd4d2bb0a4f53ebaf1e51d4c15de6fed>. Make sure you get all the subscripts right.
-4. Install and load the `modelsummary` package, and run the following\
+4. Install and load the `modelsummary` package, run the following, and find out what the average salary is for females in the sample (`sex` = 0 for males, 1 for females).\
     (You need to remove the `eval = FALSE` chunk option.)
 
 ```{r, eval = FALSE}
-# Install and load the modelsummary package first; otherwise it won't run
+# Install and load the modelsummary package first; otherwise, it won't run
 library(modelsummary)
+datasummary_balance(~ sex, data = salary_dat)
+```
+
+5. Run the following and find out what the code chunk does\
+    (You need to remove the `eval = FALSE` chunk option.)
+
+```{r, eval = FALSE}
 fm1 <- lm(salary ~ pub, data = salary_dat)
 fm2 <- lm(salary ~ pub + time, data = salary_dat)
 fm3 <- lm(salary ~ pub * time, data = salary_dat)
@@ -212,7 +219,7 @@ msummary(list(`model 1` = fm1, `model 2` = fm2, `model 3` = fm3))
 
 ---
 
-5. Run the following. You'll need to remove `eval = FALSE` so that it runs. Find out what this code chunk does.
+6. Run the following and find out what this code chunk does. You'll need to remove `eval = FALSE` so it runs.
 
 ```{r, eval = FALSE}
 ggplot(cars, aes(x = pub, y = salary)) +
@@ -222,8 +229,8 @@ ggplot(cars, aes(x = pub, y = salary)) +
 
 ---
 
-6. The following shows an interaction plot. Based on the plot, write a sentence to interpret the interaction between `time` (time since Ph.D.) and `pub` (number of publications) when predicting `salary`.\
-    (Hint: You need to install the `interactions` package. You can ignore statistical significance in your interpretation; just focus on the pattern shown in the graph.)
+7. The following shows an interaction plot. Based on the plot, write a sentence to interpret the interaction between `time` (time since Ph.D.) and `pub` (number of publications) when predicting `salary`.\
+    (Hint: You need to install the `interactions` package. You can ignore statistical significance in your interpretation; focus on the pattern shown in the graph.)
 
 ```{r interaction-plot, eval = FALSE}
 interactions::interact_plot(fm3,
@@ -240,6 +247,6 @@ interactions::interact_plot(fm3,
 
 ---
     
-7. Knit the document to HTML, PDF, and Word. If you run into an error when knitting to any one of the formats, record the error message. Which format do you prefer?
+8. Knit the document to HTML, PDF, and Word. Which format do you prefer? If you run into an error when knitting to any one of the formats, record the error message.
 
-8. Submit the knitted document to Blackboard in your preferred format (HTML, PDF, or WORD).
+9. Submit the knitted document to Blackboard in your preferred format (HTML, PDF, or WORD).

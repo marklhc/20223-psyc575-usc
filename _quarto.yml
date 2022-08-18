@@ -2,7 +2,6 @@ project:
   type: website
   render:
     - "*.qmd"
-    - "!/codes/rcode3.qmd"
   resources:
     - "/slides"
     - "!/slides/*.Rmd"
@@ -25,14 +24,14 @@ website:
       title: "Modules"
       contents:
         - modules/week1.qmd
-        - modules/week1b.qmd
+        - modules/week2.qmd
 
     - id: codes
       title: "R code"
       contents:
         - codes/rcode1.qmd
-        - codes/rcode1b.qmd
-        # - codes/rcode3.qmd
+        - codes/rcode2.qmd
+        # - codes/rcode2.qmd
 
 format:
   html:

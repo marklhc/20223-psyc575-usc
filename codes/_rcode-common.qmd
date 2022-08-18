@@ -5,11 +5,8 @@ theme_set(theme_classic() +
     theme(panel.grid.major.y = element_line(color = "grey92")))
 source(here::here("helper.R"))
 rmd_name <- paste0(params$rmd_file, ".Rmd")
-rmd_path <- file.path("rmd", rmd_name)
 ```
 
-Click here to download the Rmd file: [`r rmd_name`](`r rmd_path`)
-
-```{r child = rmd_path}
+```{r child = rmd_name}
 
 ```

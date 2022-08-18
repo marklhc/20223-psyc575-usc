@@ -89,7 +89,7 @@ $$\color{red}{e_i \sim N(0, \sigma)}$$
 
 ???
 
-- It's only a review so I won't go deep. 
+- It's only a review, so I won't go deep. 
 - You may check out the sections in the book by Gelman et al. 
 - Model in OpenBoard
 - Statistical notation
@@ -206,7 +206,7 @@ Citation vs salary as an example
 - Uncertainty measured by standard errors and confidence intervals
     * Show animations on the varying regression slopes
     * A function of sample size
-- Centering: Draw picture on changing the x-axis
+- Centering: Draw a picture on changing the x-axis
 - Interpretations: unit increase in $x$ associated with $\beta$ unit increase in $y$
 
 ---

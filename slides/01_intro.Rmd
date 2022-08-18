@@ -23,13 +23,13 @@ background-image: url(img/hierarchical_structure.png)
 
 ???
 
-Hi everyone, welcome to PSYC 575, multilevel modeling. In the first week, you'll be hearing from me a quick introduction about multilevel analysis, and some basic concepts. Some of the concepts will be further elaborated in future lectures, so don't worry if some of the ideas may not be very intuitive to you---we'll come back to them. 
+Hi everyone, welcome to PSYC 575, multilevel modeling. In the first week, you'll be hearing from me a quick introduction to multilevel analysis, and some basic concepts. Some of the concepts will be further elaborated on in future lectures, so don't worry if some of the ideas may not be very intuitive to you---we'll come back to them. 
 
-So what is multilevel analysis? A multilevel analysis is a statistical analysis to analyze data that have some forms of a hierarchical structure. A classic example is shown in this picture. Imagine you're collecting student data in Los Angeles, from multiple schools, and multiple school districts. Now, it is very likely that different schools will have different student demographics, so for example, these students here may be quite different from, say, these students here from another school. 
+So what is multilevel analysis? Multilevel analysis is a statistical analysis to analyze data that have some form of a hierarchical structure. A classic example is shown in this picture. Imagine you're collecting student data in Los Angeles, from multiple schools, and multiple school districts. Now, it is very likely that different schools will have different student demographics, so for example, these students here may be quite different from, say, these students here from another school. 
 
-Now, at the school level, we may have these two schools from one school district, and these two other schools from another school district. Again, with the different geographic locations and policies of the school districts, these two clusters of schools may again be different. 
+Now, at the school level, we may have these two schools from one school district, and these two other schools from another school district. Again, with the different geographic locations and policies of the school districts, these two clusters of schools may be different. 
 
-Traditional regression analysis is not suitable for analyzing data with kind of hierarchical structure, because it violates the "independence observation" assumption, which we will further discuss in week 3. Multilevel modeling, on the other hand, is well suited to analyze such data. 
+Traditional regression analysis is not suitable for analyzing data with this kind of hierarchical structure, because it violates the "independence observation" assumption, which we will further discuss in week 2. Multilevel modeling, on the other hand, is well suited to analyze such data. 
 
 ---
 
@@ -41,7 +41,7 @@ Traditional regression analysis is not suitable for analyzing data with kind of 
 
 ???
 
-In the next few videos, I'm going to talk about some history of multilevel modeling, abbreviated as MLM, and why it leads to some confusing names in the literature. I'm also going to provide more examples on the types of data MLM can handle. 
+In the next few videos, I'm going to talk about the history of multilevel modeling, abbreviated as MLM, and why it leads to some confusing names in the literature. I'm also going to provide more examples on the types of data MLM can handle. 
 
 ---
 class: inverse, center, middle
@@ -74,9 +74,9 @@ The title of this course is multilevel modeling, but you may sometimes hear peop
 
 ???
 
-The reason that there are several different names. This is not uncommon in statistics; indeed, some have made the joke that the more names is given to a concept, the more important the concept is, so this really says that multilevel modeling is a very important technique. But really, the different naming is mainly because people in different areas of research call them differently. We've seen HLM, which is commonly used in education, sociology, and psychology. Variance component model is used in statistics. Another very popular name for multilevel modeling in statistics and biomedical research is mixed model or mixed-effect model; indeed, this is how multilevel modeling is called in many software, including R, SAS, SPSS, and Stata. Finally, in economics and econometrics, you may also see the term random coefficient model. 
+The reason is that there are several different names. This is not uncommon in statistics; indeed, some have made the joke that the more names are given to a concept, the more important the concept is, so this really says that multilevel modeling is a very important technique. But really, the different naming is mainly because people in different areas of research call them differently. We've seen HLM, which is commonly used in education, sociology, and psychology. The variance component model is used in statistics. Another very popular name for multilevel modeling in statistics and biomedical research is mixed model or mixed-effect model; indeed, this is how multilevel modeling is called in many software, including R, SAS, SPSS, and Stata. Finally, you may also see the term random coefficient model in economics and econometrics. 
 
-In this course we're going to use the term multilevel modeling, which I think is easier to understand and is also becoming the standard name in social and behavioral sciences. However, do realize that some other researchers may call it differently even though they are actually using the same technique. 
+In this course, we're going to use the term multilevel modeling, which is easier to understand and is also becoming the standard name in social and behavioral sciences. However, do realize that some other researchers may call it differently even though they are actually using the same technique. 
 
 ---
 
@@ -98,31 +98,11 @@ Robinson (1950)<sup>1</sup>
 
 ???
 
-MLM is a technique that naturally handles data coming from different "levels". 
-And it is important to know what the level is when interpreting results.
-One of an early example of analyzing data across different levels come from 
-Robinson (1950), who used data from the 1930 Census of the United States. The 
-figure here shows the relation between illiteracy, in terms of American English,
-at the state level. Each point here represents one of the 48 states, as in 1930
-Hawaii and Alaska are not part of the union. As you can see, there seem to be
-a negative association, in that a state with more immigrants would actually 
-have higher literacy in American English, which would seem counterintuitive. I
-would encourage you to pause the video to think about why this is the case. 
+MLM is a technique that naturally handles data coming from different "levels". And it is important to know what the level is when interpreting results. One of an early example of analyzing data across different levels come from Robinson (1950), who used data from the 1930 Census of the United States. The figure here shows the relation between illiteracy, in terms of American English, at the state level. Each point here represents one of the 48 states, as in 1930 Hawaii and Alaska are not part of the union. As you can see, there seems to be a negative association, in that a state with more immigrants would actually have higher literacy in American English, which would seem counterintuitive. I suggest you pause the video to think about why this is the case. 
 
-What's interesting here is that when you talk about associations between 
-variables, they can be very different depending on what levels you're looking
-at. At the state level, we're talking about proportion of people who's illiterate
-and proportion of people who's foreign born. And the correlation of that, based
-on Robinson's account, was -.53. However, we may also be talking about whether 
-an immigrant is more or less likely to be illiterate, in which case we're 
-talking about a person-level association. In this case, we need to look at 
-the correlation within a state, in which case Robinson tells us that the 
-correlation is actually positive, meaning that an immigrant is actually more
-likely to be illiterate. 
+What's interesting here is that when you talk about associations between variables, they can be very different depending on what levels you're looking at. At the state level, we're talking about proportion of people who are illiterate and the proportion of people who are foreign-born. And the correlation of that, based on Robinson's account, was -.53. However, we may also be talking about whether an immigrant is more or less likely to be illiterate, in which case we're talking about a person-level association. In this case, we need to look at the correlation within a state. Robinson tells us that the correlation is positive, meaning that an immigrant is more likely to be illiterate. 
 
-You will see many more examples whether the correlations are quite different
-across levels of analysis. These observations are part of what motivates 
-people to develop methods to analyze such data. 
+You will see many more examples whether the correlations are quite different across levels of analysis. These observations are part of what motivates people to develop methods to analyze such data. 
 
 ---
 
@@ -151,14 +131,7 @@ Measurements | Person
 
 ???
 
-As we have seen earlier, a hierarchical structure is one where multiple lower 
-level units are nested within a higher level unit. There are plenty of examples
-in social and behavioral sciences, and here are some examples. Notice that by 
-convention, we call the units at the lowest level as level 1. Here are some 
-other examples. Note that although the lower level is usually persons, sometimes
-it can be things like classrooms nested within multiple schools. And the last 
-one here is one where a person gives multiple measurement, which essentially 
-covers all within-subject experiments, and longitudinal studies. 
+As we have seen earlier, a hierarchical structure is one where multiple lower-level units are nested within a higher level unit. There are plenty of examples in social and behavioral sciences, and here are some examples. Notice that by convention, we call the units at the lowest level as level 1. Here are some other examples. Note that although the lower level is usually persons, sometimes it can be things like classrooms nested within multiple schools. And the last one here is one where a person gives multiple measurement, which essentially covers all within-subject experiments, and longitudinal studies. 
 
 --
 
@@ -186,12 +159,7 @@ DiagrammeR::grViz("
 
 ???
 
-A useful way to represent hierarchical data structures is to use what is called
-a network graph. Here there are eight lower level units and three higher 
-level units, and the lines show which lower level units are related to which 
-upper level units, like here A is related to unit 1. I would encourage you to 
-take a moment to convince yourself that all the examples in the table on the 
-left can be represented by a network graph like the one here. 
+A useful way to represent hierarchical data structures is to use what is called a network graph. Here there are eight lower level units and three higher level units, and the lines show which lower level units are related to which upper level units, like here A is related to unit 1. I encourage you take a moment to convince yourself that all the examples in the table on the left can be represented by a network graph like the one here. 
 
 ---
 
@@ -259,9 +227,7 @@ PsycINFO, 2022 May-Aug, with keywords
 
 ???
 
-To show the broad range of studies that used MLM, I did a quick search on 
-PsycINFO on studies in the past three months. As you can see, it has been 
-used in many different areas of psychological research. 
+To show the broad range of studies that used MLM, I quickly searched PsycINFO on studies in the past three months. As you can see, it has been used in many different areas of psychological research. 
 ---
 
 Recent literature in 2022

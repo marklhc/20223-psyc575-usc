@@ -1,13 +1,13 @@
 ---
-title: "R Codes (Refresher)"
+title: "R Codes (Week 2)"
 format:
   html:
     code-tools:
-      source: rmd/week1-review-regression.Rmd
+      source: week2-review-regression.Rmd
       toggle: false
       caption: Download Rmd
 params:
-  rmd_file: "week1b-review-regression"
+  rmd_file: "week2-review-regression"
 ---
 
 {{< include _rcode-common.qmd >}}

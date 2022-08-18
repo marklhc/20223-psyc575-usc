@@ -1,0 +1,316 @@
+---
+title: "Week 3"
+subtitle: "The Random Intercept Model"
+execute:
+  echo: false
+params:
+  slides: "03_random_intercept_model"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Explain the components of a random intercept model
+- Interpret intraclass correlations
+- Use the design effect to decide whether MLM is needed
+- Explain why ignoring clustering (e.g., regression) leads to inflated chances of Type I errors
+- Describe how MLM pools information to obtain more stable inferences of groups
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Snijders & Bosker ch 3.1--3.4, 4.1--4.5, 4.8
+3. Attend the Tuesday session to learn about R, and ask questions
+4. Attend the Thursday session and participate in the class exercise
+5. Complete Homework 2
+
+# Lecture
+
+## Slides
+
+[PDF slides](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Overview
+
+```{r}
+add_youtube("fyup2VnsVLM")
+```
+
+Here's a snapshot of the `sleepstudy` data:
+
+```{r}
+data("sleepstudy", package = "lme4")
+sleepstudy[c(1:3, 11:13, 21:23), ]
+```
+
+where `Subject` is the cluster ID.
+
+```{r}
+#| results: asis
+practice_question(
+    "Is `Days` a level-1 or a level-2 variable?",
+    answer = "Level-1", 
+    options = c("Level-1", 
+                "Level-2"), 
+    type = "radio"
+)
+```
+
+## Unconditional Random Intercept Model
+
+### Equations
+
+```{r}
+add_youtube("w7jOQMQFvnc")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "$u_{0j}$ is the new term in a multilevel model (compared to regression). Is it a level-1 or a level-2 deviation variable?",
+    answer = "Level-2", 
+    options = c("Level-1", 
+                "Level-2"), 
+    type = "radio"
+)
+```
+
+## Fixed and Random Effects
+
+```{r}
+add_youtube("8uLgaLNPJbk")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "For the unconditional model, which of the following is a fixed effect?",
+    answer = "the grand mean", 
+    options = c("school means", 
+                "individual scores", 
+                "variance components", 
+                "the grand mean"), 
+    type = "radio")
+```
+
+## The Intraclass Correlation
+
+```{r}
+add_youtube("x4VT8sSyckg")
+```
+
+::: {.callout-tip appearance="simple"}
+
+On the slide around the 9-minute mark, the numbers labeled the "Std.Dev." is just the square root of the variance components. That is, the standard deviation of the school means and the within-school standard deviation.
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "For a study, if $\\tau^2_0 = 5$, $\\sigma^2 = 10$, what is the ICC?",
+    answer = "0.333", 
+    options = c("0.5", 
+                "2.0", 
+                "0.333"), 
+    type = "radio"
+)
+```
+
+The graph below shows the distribution of the `Reaction` variable in the `sleepstudy` data.
+
+```{r}
+#| message: false
+library(tidyverse)
+sleepstudy %>%
+    ggplot(aes(x = Subject, y = Reaction)) +
+    geom_jitter(height = 0, width = 0.1, alpha = 0.3) +
+    # Add school means
+    stat_summary(
+        fun = "mean", geom = "point", col = "red",
+        shape = 17, # use triangles
+        size = 4 # make them larger
+    )
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What do you think is the value of ICC in the above graph?",
+    answer = "0.4", 
+    options = c("0", 
+                "0.4", 
+                "0.9"), 
+    type = "radio"
+)
+```
+
+## Empirical Bayes Estimates
+
+Note: OLS = ordinary least squares, the estimation method commonly used in regular regression. 
+
+```{r}
+add_youtube("cs-t0Xitr8k")
+```
+
+::: {.callout-note icon=false}
+
+## Think more
+
+When $\sigma^2 / n_j = 0$, $\lambda_j = 1$, and the empirical Bayes estimate will be the same as the sample school mean, meaning that there is no borrowing of information. Why is there no need to borrow information in this situation?
+
+:::
+
+## Adding a Level-2 Predictor
+
+Note that the `ses` was standardized in the data set, meaning that `ses` = 0 is at the sample mean, and `ses` = 1 means one standard deviation above the mean. 
+
+```{r}
+add_youtube("5kiBrPO_WTs")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In regression, the independent observation assumption means that",
+    answer = "Knowing the score of one observation gives no information about other observations", 
+    options = c("The predictor variables should be independent", 
+                "Knowing the score of one observation gives no information about other observations", 
+                "The data should follow a hierarchical structure"), 
+    type = "radio"
+)
+```
+
+## The Design Effect
+
+```{r}
+add_youtube("0pRpU6-8zGs")
+```
+
+::: {.callout-note icon=false}
+
+## Practice yourself
+
+Compute the design effect for `mathach` for the HSB data. Which of the following is the closest to your computation?
+
+```{r}
+#| results: asis
+check_question("8.9", 
+               options = c("8.1", 
+                           "8.9", 
+                           "29.6", 
+                           "1294.1"), 
+               type = "radio", 
+               right = right_ans, 
+               wrong = wrong_ans)
+```
+
+:::
+
+::: {.callout-note icon=false}
+
+## Bonus Challenge
+
+What is the design effect for a longitudinal study of 5 waves with 30 individuals, and with an ICC for the outcome of 0.5?
+
+```{r}
+#| results: asis
+check_question("3", 
+               options = c("1", 
+                           "3", 
+                           "15.5"), 
+               type = "radio", 
+               right = right_ans, 
+               wrong = wrong_ans)
+```
+
+:::
+
+### Aggregation
+
+::: {.callout-note icon=false}
+
+While disaggregation yields result with standard errors being too small, aggregation generally results in standard errors that are slightly larger. The main problem of aggregation, however, is that it removes all the information in the lower level, so level-1 predictors cannot be studied. MLM avoids problems of both disaggregation and aggregation. 
+
+:::
+
+### Standard error estimates under OLS and MLM
+
+This part is optional but gives a mathematical explanation of why OLS underestimates the standard error.
+
+```{r}
+add_youtube("cQ4DZXe8BZw")
+```
+
+## Model equations
+
+```{r}
+add_youtube("RJeo9BwLnJw")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In the level-2 equation with `meanses` as the predictor, what is the outcome variable?",
+    answer = "school mean math achievement", 
+    options = c("student math achievement scores", 
+                "school mean math achievement", 
+                "variance of school means"), 
+    type = "radio"
+)
+```
+
+## MLM with a level-2 predictor in R
+
+```{r}
+add_youtube("U9dozP0VFUg")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "How do you interpret the coefficient for `meanses`?",
+    answer = "The predicted difference in math achievement between two schools with one unit difference in mean SES", 
+    options = c("The predicted difference in math achievement between two schools with one unit difference in mean SES", 
+                "The mean achievement for a school with meanses = 0", 
+                "The variance of math achievement accounted for by meanses"), 
+    type = "radio"
+)
+```
+
+## Statistical Inference
+
+```{r}
+add_youtube("oV14ScItiV4")
+```
+
+::: {.callout-tip appearance="simple"}
+
+If the 95% CI excludes zero, there is evidence that the predictor has a nonzero relation with the outcome.
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "By default, what type of confidence interval is computed by the `lme4` package?",
+    answer = "Likelihood-based", 
+    options = c("Likelihood-based", 
+                "Wald", 
+                "Score", 
+                "Bootstrap"), 
+    type = "radio"
+)
+```
+
+:::

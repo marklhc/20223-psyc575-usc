@@ -9,8 +9,11 @@ execute:
 #| out.width: 50%
 logo_url <- "https://identity.usc.edu/files/2012/01/primaryshieldwordmark.png"
 if (knitr::is_latex_output()) {
-  download.file(logo_url, "local_files/primaryshieldwordmark.png")
-  knitr::include_graphics("local_files/primaryshieldwordmark.png")
+  logo_path <- "local_files/primaryshieldwordmark.png"
+  if (!file.exists(logo_path)) {
+    download.file(logo_url, logo_path)
+  }
+  knitr::include_graphics(logo_path)
 } else {
   knitr::include_graphics("https://identity.usc.edu/files/2012/01/primaryshieldwordmark.png")
 }
@@ -147,7 +150,7 @@ Participation accounts for 12% of the course grade. To earn full credit for part
 | Homework 1-10            | 60          |
 | Prospectus               | 5           |
 | Peer review              | 3           |
-| Final presentation/paper | 25          |
+| Final presentation/paper | 20          |
 | **TOTAL**                | 100         |
 
 ## Grading Scale
@@ -238,47 +241,45 @@ dates <- paste(
 | Week 1\         | - Overview of multilevel models         | - SB ch 1, [2][3]              | - Exercise 1           |
 | Aug 23 & 25     | - R Markdown                            | - [R Markdown Intro][1]        | - Quiz on Regression   |
 |                 | - Review of regression                  | - [rmarkdown cheatsheet][2]    | - HW 1                 |
-|                 |                                         | - [Gelman et al. ch 1.1,       |                        |
-|                 |                                         | 1.2, 1.4][4]                   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 2\         | - What are statistical models?          | - SB ch 3.1--3.4, 4.1--4.5,    | - Exercise 2           |
-| Aug 30 & Sep 1  | - The random intercept model            | 4.8                            | - HW 2                 |
-+-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 3\         | - Effect decomposition                  | - SB ch 4.6, 5.1--5.3          | - Exercise 3           |
-| Sep 6 & 8       | - Random coefficient model              |                                | - HW 3                 |
-|                 | - Cross-level interactions              |                                |                        |
-+-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 4\         | - Model estimation                      | - SB ch 4.7, 6                 | - Exercise 4           |
-| Sep 13 & 15     | - Model testing                         | - Gelman et al. ch 4.1, 4.2,   | - HW 4a                |
+| Week 2\         | - What are statistical models?          | - [Gelman et al. ch 1.1,       | - Exercise 2           |
+| Aug 30 & Sep 1  | - Review of regression                  | 1.2, 1.4][4]                   | - HW 2                 |
+|                 |                                         | - Gelman et al. ch 4.1, 4.2,   |                        |
 |                 |                                         | 4.4, 4.5                       |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 5\         | - Model assumptions and diagnostics     | - SB ch 10                     | - Exercise 5           |
-| Sep 20 & 22     | - Reporting results                     | - [10 quick tips to improve    | - HW 4b                |
+| Week 3\         | - The random intercept model            | - SB ch 3.1--3.4, 4.1--4.5,    | - Exercise 3           |
+| Sep 6 & 8       |                                         | 4.8                            | - HW 3                 |
++-----------------+-----------------------------------------+--------------------------------+------------------------+
+| Week 4\         | - Effect decomposition                  | - SB ch 4.6, 5.1--5.3          | - Exercise 4           |
+| Sep 13 & 15     | - Random coefficient model              |                                | - HW 4                 |
+|                 | - Cross-level interactions              |                                |                        |
++-----------------+-----------------------------------------+--------------------------------+------------------------+
+| Week 5\         | - Model estimation                      | - SB ch 4.7, 6                 | - Exercise 5           |
+| Sep 20 & 22     | - Model testing                         | - Gelman et al. ch 4.1, 4.2,   |                        |
+|                 |                                         | 4.4, 4.5                       |                        |
++-----------------+-----------------------------------------+--------------------------------+------------------------+
+| Week 6\         | - Model assumptions and diagnostics     | - SB ch 10                     | - Exercise 6           |
+| Sep 27 & 29     | - Reporting results                     | - [10 quick tips to improve    | - HW 5                 |
 |                 |                                         | your regression modeling][5]   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 6\         | - Sample size planning                  | - SB ch 11                     | - Exercise 6           |
-| Sep 27 & 29     |                                         |                                | - HW 5                 |
+| Week 7\         | - Sample size planning                  | - SB ch 11                     | - Exercise 7           |
+| Oct 4 & 6       |                                         |                                | - HW 6                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 7\         | - MLM for experimental designs          | - SB ch 13.1                   | - Exercise 7           |
-| Oct 4 & 6       | - Cross-classified Models               | - [Hoffman & Rovine (2007)][6] | - HW 6                 |
-+-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 8\         | - Models for longitudinal data I        | - SB ch 15                     | - Prospectus           |
-| Oct 11 ~~& 13~~ |                                         |                                |                        |
+| Week 8\         | - MLM for experimental designs          | - SB ch 13.1                   | - HW 7                 |
+| Oct 11 ~~& 13~~ | - Cross-classified Models               | - [Hoffman & Rovine (2007)][6] |                        |
 | (Fall recess)   |                                         |                                |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 9\         | - Models for longitudinal data II       | - [Hoffman (2014) ch 4.1][7]   | - Exercise 8           |
-| Oct 18 & 20     |                                         | - [Hoffman (2014) ch 8][8]     | - HW 7                 |
+| Week 9\         | - Models for longitudinal data I        | - SB ch 15                     | - Exercise 8           |
+| Oct 18 & 20     |                                         |                                | - Prospectus           |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 10\        | - Causal inference with multilevel data | - TBD                          | - Exercise 9           |
-| Oct 25 & 27     |                                         |                                | - HW 8                 |
+| Week 10\        | - Models for longitudinal data II       | - [Hoffman (2014) ch 4.1][7]   | - Exercise 9           |
+| Oct 25 & 27     |                                         | - [Hoffman (2014) ch 8][8]     | - HW 8                 |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 11\        | - Multilevel logistic regression        | - SB ch 17.1--17.3             | - Exercise 10          |
+| Week 11\        | - Causal inference with multilevel data | - TBD                          | - Exercise 10          |
 | Nov 1 & Nov 3   |                                         |                                | - HW 9                 |
-|                 |                                         |                                | - Preliminary analysis |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
-| Week 12\        | - Topic chosen by students              | - TBD                          | - Exercise 11          |
-| Nov 8 & 10      | (other discrete outcomes/               |                                | - Peer review          |
-|                 | measurement issues/meta-analytic models |                                |                        |
+| Week 12\        | - Multilevel logistic regression        | - SB ch 17.1--17.3             | - Exercise 11          |
+| Nov 8 & 10      |                                         |                                | - Preliminary analysis |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 13\        | - Missing data                          | - SB ch 9                      | - Exercise 12          |
 | Nov 15 & 17     |                                         |                                | - HW 10                |

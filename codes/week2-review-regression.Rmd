@@ -1,10 +1,10 @@
 ---
-title: "Introduction to R Markdown"
-author: "Your Name"
+title: "Review of Multiple Regression"
 output:
   html_document:
-    toc: false
-    toc_float: false
+    df_print: paged
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include = FALSE}
@@ -129,6 +129,190 @@ confint(m1)
 > Based on our model, faculty with one more publication have predicted salary of $350.8, 95% CI [$196.4, $505.2], higher than those with one less publication. 
 
 But what do the confidence intervals and the standard errors mean? To understanding what exactly a regression model is, let's run some simulations.
+
+***
+
+### Simulations
+
+Before you go on, take a look on a [brief introductory video](https://www.youtube.com/watch?v=pGvJl8vvlXY) by Clark Caylord on Youtube on simulating data based on a simple linear regression model. 
+
+Based on the analyses, the sample regression line is 
+$$\widehat{\text{salary}} = 48439.09 + 350.80 \text{pub}.$$
+The numbers are only sample estimates as there are sampling errors. However, if we assume that this line truly describe the relation between `salary` and `pub`, then we can simulate some fake data, which represents what we could have obtained in a different sample. 
+
+Going back to the equation
+$$\text{salary}_i = \beta_0 + \beta_1 \text{pub}_i + e_i,$$
+the only thing that changes across different samples, based on the statistical model, is $e_i$. Conceptually, you can think of the error term $e_i$ as **the deviation of person $i$'s salary from the mean salary of everyone in the population who has the same number of publications as person $i$.** Here we assume that $e_i$ is normally distributed, written as $e_i \sim N(0, \sigma)$, where $\sigma$ describes the conditional standard deviation (i.e., the standard deviation across individuals who have the same number of publications). From the regression results, $\sigma$ is estimated as the `Residual standard error` = 8,440. 
+
+Based on these model assumptions, we can imagine a large population, say with 10,000 people
+
+```{r fake-pop}
+# Simulating a large population. The code in this chunk
+# is not essential for conceptual understanding
+Npop <- 10000
+beta0 <- 48439.09
+beta1 <- 350.80
+sigma <- 8440
+# Simulate population data
+simulated_population <- tibble(
+    # Simulate population pub
+    pub = local({
+        dens <- density(c(-salary_dat$pub, salary_dat$pub),
+            bw = "SJ",
+            n = 1024
+        )
+        dens_x <- c(0, dens$x[dens$x > 0])
+        dens_y <- c(0, dens$y[dens$x > 0])
+        round(
+            approx(
+                cumsum(dens_y) / sum(dens_y),
+                dens_x,
+                runif(Npop)
+            )$y
+        )
+    }),
+    # Simulate error
+    e = rnorm(Npop, mean = 0, sd = sigma)
+)
+# Compute salary variable
+simulated_population$salary <-
+    beta0 + beta1 * simulated_population$pub + simulated_population$e
+# Plot
+p_pop <- ggplot(
+    data = simulated_population,
+    aes(x = pub, y = salary)
+) +
+    geom_point(alpha = 0.1) +
+    # Add population regression line in blue
+    geom_smooth(se = FALSE, method = "lm")
+p_pop
+```
+
+Now, we can simulate some fake (but plausible) samples. An important thing to remember is we want to **simulate data that have the same size as the original sample**, because we're comparing to other plausible samples with equal size. In R there is a handy `simulate()` function to do that. 
+
+```{r sim-data1}
+simulated_salary <- simulate(m1)
+# Add simulated salary to the original data
+# Note: the simulated variable is called `sim_1`
+sim_data1 <- bind_cols(salary_dat, simulated_salary)
+# Show the first six rows
+head(sim_data1)
+# Plot the data (add on to the population)
+p_pop +
+    geom_point(
+        data = sim_data1,
+        aes(x = pub, y = sim_1),
+        col = "red"
+    ) +
+    # Add sample regression line
+    geom_smooth(
+        data = sim_data1,
+        aes(x = pub, y = sim_1),
+        method = "lm", se = FALSE, col = "red"
+    )
+```
+
+```{r alternative-sim-data1, eval=FALSE}
+# To be more transparent, here's what the simulate() function essentially is
+# doing
+sample_size <- nrow(salary_dat)
+sim_data1 <- tibble(
+    pub = salary_dat$pub,
+    # simulate error
+    e = rnorm(sample_size, mean = 0, sd = sigma)
+)
+# Compute new salary data
+sim_data1$sim_1 <- beta0 + beta1 * sim_data1$pub + sim_data1$e
+```
+
+As you can see, the sample regression line in red is different from the blue line. 
+
+#### Drawing 100 samples
+
+Let's draw more samples
+
+```{r sim-100-samples, results = FALSE}
+num_samples <- 100
+simulated_salary100 <- simulate(m1, nsim = num_samples)
+# Form a giant data set with 100 samples
+sim_data100 <- bind_cols(salary_dat, simulated_salary100) %>%
+    pivot_longer(sim_1:sim_100,
+        names_prefix = "sim_",
+        names_to = "sim",
+        values_to = "simulated_salary"
+    )
+# Plot by samples
+p_sim100 <- ggplot(
+    sim_data100,
+    aes(x = pub, y = simulated_salary, group = sim)
+) +
+    geom_point(col = "red", alpha = 0.1) +
+    geom_smooth(col = "red", se = FALSE, method = "lm")
+# Code for generating GIF
+# # Use gganimate (this takes some time to render)
+# library(gganimate)
+# p_sim100 + transition_states(sim) +
+#     ggtitle("Simulation {frame} of {nframes}")
+# anim_save("sim-100-samples.gif")
+```
+
+```{r, echo = FALSE, eval = file.exists("sim-100-samples.gif")}
+knitr::include_graphics("sim-100-samples.gif")
+```
+
+We can show the regression lines for all 100 samples
+
+```{r plot-sim_data100}
+ggplot(
+    sim_data100,
+    aes(x = pub, y = simulated_salary, group = sim)
+) +
+    stat_smooth(
+        geom = "line",
+        col = "red",
+        se = FALSE,
+        method = "lm",
+        alpha = 0.4
+    )
+```
+
+The confidence intervals of the intercept and the slope how much uncertainty there is. 
+
+### $p$ values
+
+Now, we can also understand the $p$ value for the regression slope of `pub` is. Remember that the $p$ value is the probability that, if the regression slope of `pub` is zero (i.e., no association), how likely/unlikely would we get the sample slope (i.e., 350.80) in our data. So now we'll repeat the simulation, but without `pub` as a predictor (i.e., assuming $\beta_1 = 0$). 
+
+```{r sim-null}
+num_samples <- 100
+m0 <- lm(salary ~ 1, data = salary_dat) # null model
+simulated_salary100_null <- simulate(m0, nsim = num_samples)
+# Form a giant data set with 100 samples
+sim_null100 <- bind_cols(salary_dat, simulated_salary100_null) %>%
+    pivot_longer(sim_1:sim_100,
+        names_prefix = "sim_",
+        names_to = "sim",
+        values_to = "simulated_salary"
+    )
+# Show the null slopes
+ggplot(
+    data = salary_dat,
+    aes(x = pub, y = salary)
+) +
+    stat_smooth(
+        data = sim_null100,
+        aes(x = pub, y = simulated_salary, group = sim),
+        geom = "line",
+        col = "darkgrey",
+        se = FALSE,
+        method = "lm"
+    ) +
+    geom_smooth(method = "lm", col = "red", se = FALSE) +
+    geom_point()
+```
+
+So you can see the sample slope is larger than what you would expect to see if the true slope is zero. So the $p$ value is very small, and the result is statistically significant (at, say, .05 level). 
+
+***
 
 ### Centering
 

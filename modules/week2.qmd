@@ -1,10 +1,10 @@
 ---
-title: "Regression Refresher"
-subtitle: "Multiple Regression"
+title: "Week 2"
+subtitle: "Review of Regression"
 execute:
   echo: false
 params:
-  slides: "1b_review_regression"
+  slides: "02_review_regression"
 ---
 
 ```{r}
@@ -44,7 +44,7 @@ practice_question(
     "In the example in the video, why do we need a random component?",
     answer = "Because people who spend the same amount of time studying do not always have the same mastery level",
     options = c("Because there is only one predictor",
-                "Because the relation between the variables is linear",
+                "Because the relationship between the variables is linear",
                 "Because people who spend the same amount of time studying do not always have the same mastery level"),
     type = "radio"
 )
@@ -170,9 +170,9 @@ add_youtube("vK-2xMftORM")
 
 ::: {.callout-note icon=false}
 
-## Pratice yourself
+## Practice yourself
 
-From the interaction model obtain the regression line when `pub` = 50.
+From the interaction model, obtain the regression line when `pub` = 50.
 
 :::
 

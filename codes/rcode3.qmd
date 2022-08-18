@@ -1,6 +1,11 @@
 ---
 title: "R Codes (Week 3)"
-format: html
+format:
+  html:
+    code-tools:
+      source: week3-random-intercept-model.Rmd
+      toggle: false
+      caption: Download Rmd
 params:
   rmd_file: "week3-random-intercept-model"
 ---
