@@ -1,8 +1,12 @@
 project:
   type: website
+  google-analytics:
+    tracking-id: "UA-225295148-1"
+    storage: none
   render:
     - "*.qmd"
   resources:
+    - "/codes/*.Rmd"
     - "/slides"
     - "!/slides/*.Rmd"
     - "!/slides/slide_settings.RMarkdown"

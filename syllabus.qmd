@@ -67,7 +67,7 @@ This class will be in-person and will follow a [flipped course design](https://c
 
 The lecture videos and course materials will be available at <https://psyc575-2022fall.netlify.app> by 9:00 am of each Monday, and students are expected to review these materials and the assigned readings on their own. Please note that the lecture slides only serve to guide class discussions and cannot replace the assigned readings.
 
-**Students are expected to have reviewed the lecture videos before attending the Tuesday meetings.** The **Tuesday meetings** are structured in two halves: (a) software demonstration by the instructor and (b) quizzes and Q&A sessions. During the **Thursday meetings**, students will complete in-class exercises, which are part of their participation grades.
+**Students are expected to have reviewed the lecture videos before attending the Tuesday meetings.** The **Tuesday meetings** are structured in two halves: (a) software demonstration by the instructor and (b) Q&A sessions. During the **Thursday meetings**, students will complete quizzes and/or in-class exercises, which are part of their participation grades.
 
 Before attending the class sessions, students are expected to have
 

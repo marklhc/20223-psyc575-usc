@@ -21,6 +21,10 @@ background-image: url(img/hierarchical_structure.png)
 ```{r, child = "slide_settings.RMarkdown"}
 ```
 
+```{r xaringan-scribble, echo = FALSE, eval = params$for_class}
+xaringanExtra::use_scribble()
+```
+
 ???
 
 Hi everyone, welcome to PSYC 575, multilevel modeling. In the first week, you'll be hearing from me a quick introduction to multilevel analysis, and some basic concepts. Some of the concepts will be further elaborated on in future lectures, so don't worry if some of the ideas may not be very intuitive to you---we'll come back to them. 

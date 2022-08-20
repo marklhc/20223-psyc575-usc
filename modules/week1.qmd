@@ -57,7 +57,7 @@ xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html"
 ## Multilevel Data Structure
 
 ```{r}
-add_youtube("ufvCUaUkYOA")
+add_youtube("9TtyDmczGGE")
 ```
 
 ```{r}
@@ -91,7 +91,7 @@ practice_question(
 ## Usage of MLM
 
 ```{r}
-add_youtube("4fl2chIkDy4")
+add_youtube("4fl2chIkDy4?end=340")
 ```
 
 ::: {.callout-tip appearance="simple"}
@@ -109,6 +109,10 @@ practice_question(
     type = "radio",
     alignment = TRUE
 )
+```
+
+```{r}
+add_youtube("cb0YL4LqUN4")
 ```
 
 :::
