@@ -24,7 +24,7 @@ params:
 
 .pull-left[
 
-```{r stat-model, message=FALSE, echo=FALSE}
+```{r stat-model, message=FALSE, echo=FALSE, out.width = "95%"}
 library(tidyverse)
 theme_set(theme_bw())
 x <- runif(100, 0, 15)
@@ -62,9 +62,9 @@ ggplot(df, mapping = aes(x = x, y = y)) +
   geom_path(aes(x, y), data = path2, color = "green") +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment2) +
   geom_path(aes(x, y), data = path3, color = "green") +
-  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment3) + 
-  labs(x = "", y = "") + 
-  theme(axis.ticks = element_blank(), 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), data = segment3) +
+  labs(x = "", y = "") +
+  theme(axis.ticks = element_blank(),
         axis.text = element_blank())
 ```
 
@@ -163,7 +163,7 @@ Examine factors related to annual salary of faculty in a university department
 
 .pull-left[
 
-```{r salary_dat, results='hide', echo=FALSE, fig.retina=3}
+```{r salary_dat, results='hide', echo=FALSE, fig.retina=3, out.width = "95%"}
 # Read in the data
 salary_dat <- read.table(here::here("data_files", "salary.txt"), header = TRUE)
 psych::pairs.panels(salary_dat[ , -1],  # not plotting the first column
@@ -245,7 +245,7 @@ p2 <- ggplot(salary_dat, aes(x = sex, y = salary)) +
     geom_jitter(height = 0, width = 0.1)
 ```
 
-```{r p2, echo=FALSE}
+```{r p2, echo=FALSE, out.width = "95%"}
 set.seed(1413)
 p2
 ```
@@ -273,7 +273,7 @@ $$y = \beta_0 + \beta_1 (0) = \beta_0$$
 
 .pull-right[
 
-```{r p2-1, ref.label='p2', echo=FALSE}
+```{r p2-1, ref.label='p2', echo=FALSE, out.width = "95%"}
 ```
 
 ]
@@ -302,7 +302,7 @@ $$y = \beta_0 + \beta_1 (1) = \beta_0 + \beta_1$$
 
 .pull-right[
 
-```{r p2-2, ref.label='p2', echo=FALSE}
+```{r p2-2, ref.label='p2', echo=FALSE, out.width = "95%"}
 ```
 
 
@@ -412,7 +412,7 @@ salary_dat <- salary_dat %>%
 m4 <- lm(salary ~ pub_c * time_c, data = salary_dat)
 ```
 
-```{r p4, echo=FALSE, fig.width=4.5, fig.retina=3, fig.asp=.8, out.width='100%'}
+```{r p4, echo=FALSE, fig.width=4.5, fig.retina=3, fig.asp=.8, out.width = "95%"}
 interactions::interact_plot(m4,
                             pred = "pub_c",
                             modx = "time_c",

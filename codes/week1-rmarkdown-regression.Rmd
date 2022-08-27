@@ -65,7 +65,7 @@ See <https://twitter.com/visnut/status/1248087845589274624>
 
 ```{r}
 # Uncomment the code below to load the tidyverse package
-# load(tidyverse)
+# library(tidyverse)
 ```
 
 ## Import Data
@@ -222,7 +222,7 @@ msummary(list(`model 1` = fm1, `model 2` = fm2, `model 3` = fm3))
 6. Run the following and find out what this code chunk does. You'll need to remove `eval = FALSE` so it runs.
 
 ```{r, eval = FALSE}
-ggplot(cars, aes(x = pub, y = salary)) +
+ggplot(salary_dat, aes(x = pub, y = salary)) +
   geom_point() +
   geom_smooth()
 ```

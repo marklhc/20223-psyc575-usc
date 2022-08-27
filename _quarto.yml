@@ -1,8 +1,5 @@
 project:
   type: website
-  google-analytics:
-    tracking-id: "UA-225295148-1"
-    storage: none
   render:
     - "*.qmd"
   resources:
@@ -14,6 +11,9 @@ project:
 
 website:
   title: "PSYC 575 Multilevel Modeling (2022 Fall)"
+  google-analytics:
+    tracking-id: "UA-225295148-1"
+    storage: none
   navbar:
     left:
       - text: "Home"

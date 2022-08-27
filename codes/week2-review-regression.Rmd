@@ -457,6 +457,8 @@ Interpreting interaction effects is hard. Therefore,
 
 > Always plot the interaction to understand the dynamics
 
+#### Using `interactions::interact_plot()`
+
 ```{r interaction-plot}
 interactions::interact_plot(m4,
     pred = "pub_c",
@@ -470,6 +472,21 @@ interactions::interact_plot(m4,
     y.label = "Salary",
     legend.main = "Time since Ph.D."
 )
+```
+
+#### Using `sjPlot::plot_model(..., type = "pred")`
+
+```{r sjPlot-interaction}
+plot_model(m4, type = "pred",
+           # terms = c(focal_var,
+           #           moderator [levels])
+           terms = c("pub_c", "time_c [-5.79, 0.21, 8.21]"),
+           axis.title = c("Number of publications (mean-centered)", "Salary"),
+           # "\n" indicates a line break
+           legend.title = "Time since Ph.D.\n (mean-centered)",
+           # suppress title
+           title = "",
+           show.data = TRUE)
 ```
 
 Another approach is to plug in numbers to the equation:
