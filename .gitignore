@@ -24,4 +24,6 @@ brms_cached_*\.rds
 /slides/*_files/
 /slides/*.html
 /slides/*.pdf
+/slides/*.pptx
 /slides/img/
+Thumbs.db*

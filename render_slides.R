@@ -1,6 +1,6 @@
 cat(getwd())
 # Convert Rmd slides to HTML and PDF
-for (f in dir(here::here("slides"), pattern = "*.Rmd", full.names = TRUE)) {
+for (f in dir(here::here("slides"), pattern = "^[0-1].*.Rmd", full.names = TRUE)) {
   html_file <- xfun::with_ext(f, "html")
   pdf_file <- xfun::with_ext(f, "pdf")
   if (!file.exists(html_file) || file_test("-ot", html_file, f)) {

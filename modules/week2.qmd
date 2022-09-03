@@ -13,14 +13,14 @@ source("../helper.R")
 source("../render_slides.R", local = TRUE)
 ```
 
-# Refresher Learning Objectives
+# Week Learning Objectives
 
 By the end of this module, you will be able to
 
-- Identify alternative names for multilevel modeling (MLM)
-- Describe the types of data MLM can handle
-- Knit a simple R Markdown file
-- Review concepts in multiple regression, including model equations, interactions, and interpretations
+- Describe the statistical model for regression
+- Write out the model equations
+- Simulate data based on a regression model
+- Plot interactions
 
 ## Slides
 

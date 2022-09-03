@@ -9,7 +9,7 @@ output:
 
 ## Load Packages and Import Data
 
-You can use the `message = FALSE` option to suppress the package loading messages
+You can use the `message = FALSE` option to suppress the package loading messages.
 
 ```{r load-pkg, message = FALSE}
 # To install a package, run the following ONCE (and only once on your computer)
@@ -30,7 +30,7 @@ In R, there are many packages for multilevel modeling; two of the most common on
 
 ### Import Data
 
-First, download the data from <https://github.com/marklhc/marklai-pages/raw/master/data_files/hsball.sav>.  We'll import the data in .sav format using the `read_sav()` function from the 
+First, download the data from <https://github.com/marklhc/marklai-pages/raw/master/data_files/hsball.sav>. We'll import the data in .sav format using the `read_sav()` function from the 
 `haven` package. 
 
 ```{r import_sav, message = FALSE}
@@ -73,6 +73,8 @@ With that, we can see
 - cluster ID = `id`.
 
 Thus the following syntax:
+
+> About `brms`: The `brms` package is a very powerful package that relies on Bayesian estimation, which we will discuss later in the class. I want to start introducing it because, moving forward, there are models that are difficult or impossible to estimate with `lme4`. If you cannot get `brms` to work, you may need to follow the instruction, which is different depending on your operating system, at <https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started> to configure C++ Toolchain.
 
 ::: {.panel-tabset}
 
@@ -137,7 +139,7 @@ simulated_data1 <- tibble(
     mathach = gamma00
 )
 # Show data with no variation
-# The `%+%` operator is use to substitute with a different data set
+# The `%+%` operator is used to substitute with a different data set
 p_subset %+%
     (simulated_data1 %>%
         filter(id %in% random_ids))
@@ -297,7 +299,7 @@ sjPlot::plot_model(m_lv2,
 
 ### Proportion of variance predicted
 
-We will use the $R^2$ statistic proposed by [Nakagawa, Johnson & Schielzeth (2017)](https://doi.org/10.1098/rsif.2017.0213) to obtain an $R^2$ statistic. There are multiple versions of $ R^2 $ in the literature, but personally this $ R^2 $ avoids many of the problems in other variants and is most meaningful to interpret. Note that I only interpret the marginal $R^2$.
+We will use the $R^2$ statistic proposed by [Nakagawa, Johnson & Schielzeth (2017)](https://doi.org/10.1098/rsif.2017.0213) to obtain an $R^2$ statistic. There are multiple versions of $R^2$ in the literature, but personally, this $R^2$ avoids many of the problems in other variants and is most meaningful to interpret. Note that I only interpret the marginal $R^2$.
 
 ```{r r2-m_lv2}
 # Generally, you should use the marginal R^2 (R2m) for the variance predicted by
@@ -307,7 +309,7 @@ MuMIn::r.squaredGLMM(m_lv2)
 
 An alternative, more comprehensive approach is by Rights & Sterba (2019, Psychological Methods, https://doi.org/10.1037/met0000184), with the `r2mlm` package
 
-```{r r2-m_lv2-2}
+```{r r2-m_lv2-2, fig.asp = 1}
 r2mlm::r2mlm(m_lv2)
 ```
 

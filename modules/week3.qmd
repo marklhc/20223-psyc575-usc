@@ -106,21 +106,19 @@ practice_question(
 ## The Intraclass Correlation
 
 ```{r}
-add_youtube("x4VT8sSyckg")
+add_youtube("x4VT8sSyckg?end=530")
 ```
 
-::: {.callout-tip appearance="simple"}
-
-On the slide around the 9-minute mark, the numbers labeled the "Std.Dev." is just the square root of the variance components. That is, the standard deviation of the school means and the within-school standard deviation.
-
-:::
+```{r}
+add_youtube("5c0Xxv96FeU")
+```
 
 ```{r}
 #| results: asis
 practice_question(
-    "For a study, if $\\tau^2_0 = 5$, $\\sigma^2 = 10$, what is the ICC?",
-    answer = "0.333", 
-    options = c("0.5", 
+    "For a study, if $\\tau_0 = 5$, $\\sigma = 10$, what is the ICC?",
+    answer = "0.2", 
+    options = c("0.2", 
                 "2.0", 
                 "0.333"), 
     type = "radio"
@@ -221,7 +219,7 @@ check_question("8.9",
 
 ## Bonus Challenge
 
-What is the design effect for a longitudinal study of 5 waves with 30 individuals, and with an ICC for the outcome of 0.5?
+What is the design effect for a longitudinal study of 5 waves with 30 individuals, and an ICC for the outcome of 0.5?
 
 ```{r}
 #| results: asis
