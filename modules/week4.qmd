@@ -1,0 +1,288 @@
+---
+title: "Week 4"
+subtitle: "Effect Decomposition, Random Coefficient Model, and Cross-level Interactions"
+execute:
+  echo: false
+params:
+  slides: "04_adding_level-1_predictor"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Explain what the ecological fallacy is
+- Use **cluster-mean/group-mean centering** to decompose the effect of a lv-1 predictor
+- Define **contextual effects**
+- Explain the concept of **random slopes**
+- Analyze and interpret **cross-level interaction** effects
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Snijders & Bosker ch 4.6, 5.1--5.3
+3. Attend the Tuesday Q&A + review session (optional)
+4. Attend the Thursday session and participate in the class exercise
+5. Complete Homework 4
+6. Now that you have learned the basics of MLM, start thinking about your project (Prospectus due around Oct 17)
+
+# Lecture
+
+## Slides
+
+[PDF slides](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Overview
+
+```{r}
+add_youtube("0bIXkUTEC3U")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "The Type I error inflation problem when using OLS regression for clustered data applies to",
+    "Level-2 predictors and most level-1 predictors", 
+    options = c("Level-1 predictors", 
+                "Level-2 predictors", 
+                "Level-2 predictors and most level-1 predictors"),
+    type = "radio"
+)
+```
+
+## Ecological Fallacy
+
+```{r}
+add_youtube("4SnA5Du4E-c")
+```
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+In the ["bizarre" research finding](https://blogs.scientificamerican.com/the-curious-wavefunction/chocolate-consumption-and-nobel-prizes-a-bizarre-juxtaposition-if-there-ever-was-one/) that showed a correlation between chocolate consumption and number of Nobel prize winners at the country level, which of the following is reasonable to infer?
+
+```{r}
+#| results: asis
+check_question(
+    "That there are potential third variables that relate to both a country's chocolate consumption level and the number of Nobel prize winners", 
+    options = c("That those who eat more chocolate are more likely to win a nobel prize", 
+                "That nutritional contents in chocolate is related to cognitive functioning", 
+                "That there are potential third variables that relate to both a country's chocolate consumption level and the number of Nobel prize winners"),
+    type = "radio", right = right_ans, wrong = wrong_ans
+)
+```
+
+:::
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+Summarize the "Big-Fish-Little-Pond Effect" in terms of how a person's own academic performance and the overall performance of the person's school on academic self-concept.
+
+:::
+
+## Decomposing Effects
+
+### Between/within effects
+
+::: {.callout-note icon=false}
+
+What I called "cluster-mean centering" is the same as "within-group centering" in Snijders & Bosker (2012)
+
+:::
+
+```{r}
+add_youtube("6h1U6aZmohY")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "Why do we need to separate a level-1 predictor into two variables in the model?",
+    answer = "Because the slope of the level-1 predictor and that of its cluster means may be different", 
+    options = c("Because the slope of the level-1 predictor and that of its cluster means may be different", 
+                "Because there is an interaction between the predictor and the cluster variable", 
+                "Because the intraclass correlation for any level-1 predictor will be zero"),
+    type = "radio"
+)
+```
+
+### Path diagram and equations
+
+```{r}
+add_youtube("ZhLOtzzxIRk")
+```
+
+::: {.callout-note icon=false}
+
+## Think more
+
+Based on the between-cluster level component in the path diagram and in the equations, `meanses` can predict
+
+```{r}
+#| results: asis
+check_question(
+    "Only the school means of math achievement", 
+    options = c("Both the school-level math achievement and a student's relative standing within a school", 
+                "Only a student's relative standing within a school", 
+                "Only the school means of math achievement"),
+    type = "radio", right = right_ans, wrong = wrong_ans
+)
+```
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "Based on the results shown in the video, is the school-level slope or the student-level slope larger for the association between SES and math achievement?",
+    answer = "School-level", 
+    options = c("School-level", 
+                "Student-level"),
+    type = "radio"
+)
+```
+
+### Interpret the between/within effects
+
+```{r}
+add_youtube("Pet7lt7Nb68")
+```
+
+::: {.callout-note icon=false}
+
+## Try it yourself
+
+Obtain the predicted `mathach` for Student B, and compare with Students A and C. 
+
+:::
+
+## Contextual Effects
+
+```{r}
+add_youtube("TTCE9Tuqj0Y")
+```
+
+Check your learning: The contextual effect is
+
+```{r}
+#| results: asis
+practice_question(
+    "The contextual effect is",
+    answer = "The predicted difference in the outcome for every unit difference in the cluster mean predictor, holding constant the level-1 predictor", 
+    options = c("The predicted difference in the outcome for every unit difference in the cluster mean predictor, holding constant the level-1 predictor", 
+                "The predicted difference in the outcome for every unit difference in the level-1 predictor, within a given cluster", 
+                "The between-level effect"),
+    type = "radio"
+)
+```
+
+## Random Slopes/Random Coefficients
+
+### Developing intuition
+
+```{r}
+add_youtube("K6Q9wbsdgXw")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In a random-coefficient model, if there are $J$ cluster, there are",
+    answer = "J intercepts, J slopes", 
+    options = c("one intercept, two slopes", 
+                "one intercept, J slopes", 
+                "J intercepts, one slopes", 
+                "J intercepts, J slopes"),
+    type = "radio"
+)
+```
+
+### Equations and path diagram
+
+```{r}
+add_youtube("_jXGrTbHft4")
+```
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+Which combination of $\tau_0$ and $\tau_1$ best describes the graph below?
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+ggplot(data = tibble(x = c(-1, 3), y = c(-1, 1)), 
+       aes(x = x, y = y)) + 
+    geom_blank() + 
+    geom_abline(data = tibble(a = rnorm(30, sd = 0.1), 
+                              b = rnorm(30, mean = -0.2, sd = 0.2)), 
+                aes(intercept = a, slope = b))
+```
+
+
+```{r}
+#| results: asis
+check_question("tau_0 = 0.1, tau_1 = 0.2", 
+               options = c("tau_0 = 0.1, tau_1 = 0.2", 
+                           "tau_0 = 0, tau_1 = 0.2", 
+                           "tau_0 = 0.1, tau_1 = 0", 
+                           "tau_0 = 0, tau_1 = 0"), 
+    type = "radio", right = right_ans, wrong = wrong_ans
+)
+```
+
+:::
+
+### Interpretations
+
+```{r}
+add_youtube("o6PDE4IEFfg")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In a random-slope model, if $\\gamma_{10}$ (the average slope) = 0.2, $\\tau^2_1 = 0.04$, what is the 68% plausible range for the slopes across clusters?",
+    answer = "[0, 0.4]", 
+    options = c("[0, 0.4]", 
+                "[-0.48, 0.88]", 
+                "[0.16, 0.24]", 
+                "[0.12, 0.28]"),
+    type = "radio"
+)
+```
+
+## Cross-Level Interaction
+
+<span style="color:red">In the video, there was a mistake in the path diagram, in that one of the circle should be $\beta_{1j}$, not $\beta_{0j}$</span>
+
+```{r}
+add_youtube("7RzVD02fZHw")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "Conceptually, a cross-level interaction is the same as",
+    answer = "Using a cluster-level predictor to predict variations in level-1 slopes", 
+    options = c("An interaction between two level-1 predictors",
+                "Using a cluster-level predictor to predict variations in level-1 slopes", 
+                "Random slopes", 
+                "Adding the main effect of a cluster-level predictor"),
+    type = "radio"
+)
+```
+
+:::

@@ -191,6 +191,12 @@ You can easily plot the estimated school means (also called BLUP, best linear un
 dotplot(ranef(ran_int, condVar = TRUE))
 ```
 
+Or with `sjPlot::plot_model()`
+
+```{r, fig.asp = 2}
+plot_model(ran_int, type = "re")
+```
+
 Here's a plot showing the sample school means (with no borrowing of information) vs. the EB means (borrowing information). 
 
 ```{r eb-vs-ols, fig.asp = 1}

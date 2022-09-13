@@ -1,0 +1,13 @@
+---
+title: "R Codes (Week 4)"
+format:
+  html:
+    code-tools:
+      source: week4-level-1-predictor.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week4-level-1-predictor"
+---
+
+{{< include _rcode-common.qmd >}}
