@@ -1,0 +1,19 @@
+---
+title: "R Codes (Week 5)"
+format:
+  html:
+    code-tools:
+      source: week5-estimation-testing.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week5-estimation-testing"
+---
+
+::: {.hidden}
+$$
+\newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}
+$$
+:::
+
+{{< include _rcode-common.qmd >}}

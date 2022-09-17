@@ -1,4 +1,3 @@
-cat(getwd())
 # Convert Rmd slides to HTML and PDF
 for (f in dir(here::here("slides"), pattern = "^[0-1].*.Rmd", full.names = TRUE)) {
   html_file <- xfun::with_ext(f, "html")

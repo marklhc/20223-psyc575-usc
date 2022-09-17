@@ -51,7 +51,7 @@ add_youtube("0bIXkUTEC3U")
 #| results: asis
 practice_question(
     "The Type I error inflation problem when using OLS regression for clustered data applies to",
-    "Level-2 predictors and most level-1 predictors", 
+    answer = "Level-2 predictors and most level-1 predictors", 
     options = c("Level-1 predictors", 
                 "Level-2 predictors", 
                 "Level-2 predictors and most level-1 predictors"),

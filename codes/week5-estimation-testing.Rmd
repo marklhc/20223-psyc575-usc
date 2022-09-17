@@ -1,0 +1,411 @@
+---
+title: "Estimation and Testing"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+header-includes:
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">#")
+comma <- function(x) format(x, digits = 2, big.mark = ",")
+```
+
+## Load Packages and Import Data
+
+```{r load-pkg, message=FALSE}
+# To install a package, run the following ONCE (and only once on your computer)
+# install.packages("psych")  
+library(here)  # makes reading data more consistent
+library(tidyverse)  # for data manipulation and plotting
+library(haven)  # for importing SPSS/SAS/Stata data
+library(lme4)  # for multilevel analysis
+library(brms)  # for Bayesian estimation
+library(MuMIn)  # for computing r-squared
+library(modelsummary)  # for making tables
+library(sjPlot)  # for plotting effects
+```
+
+```{r import_sav, message = FALSE}
+# Read in the data (pay attention to the directory)
+hsball <- read_sav(here("data_files", "hsball.sav"))
+```
+
+To demonstrate differences in smaller samples, we will use a subset of 16 schools
+
+```{r hsbsub}
+# Randomly select 16 school ids
+set.seed(840)  # use the same seed so that the same 16 schools are selected
+random_ids <- sample(unique(hsball$id), size = 16)
+hsbsub <- hsball %>%
+    filter(id %in% random_ids)
+```
+
+# Log-Likelihood Function $\ell$
+
+## Example: $\ell(\gamma_{01})$
+
+We'll use the model with `meanses` as the predictor on the full data set (`hsball`), and use R to write the log-likelihood function for $\gamma_{01}$
+
+```{r m_lv2, message = FALSE, echo = FALSE}
+m_lv2 <- lmer(mathach ~ meanses + (1 | id), data = hsball)
+```
+
+```{r loglik-meanses}
+# Extract V from the model
+V_m_lv2 <- (crossprod(getME(m_lv2, "A")) + Matrix::Diagonal(7185)) *
+    sigma(m_lv2)^2
+# Log-likelihood function with respect to gamma01
+llfun <- function(gamma01,
+                  gamma00 = fixef(m_lv2)[1],
+                  y = m_lv2@resp$y,
+                  X = cbind(1, m_lv2@frame$meanses),
+                  V = V_m_lv2) {
+    gamma <- c(gamma00, gamma01)
+    y_minus_Xgamma <- y - X %*% gamma
+    as.numeric(
+        - crossprod(y_minus_Xgamma, solve(V, y_minus_Xgamma)) / 2
+    )
+}
+# Vectorize
+llfun <- Vectorize(llfun)
+# Plot
+ggplot(tibble(gamma01 = c(5, 7)), aes(x = gamma01)) +
+    stat_function(fun = llfun) +
+    labs(x = expression(gamma[0][1]), y = "log(Likelihood)")
+```
+
+# Standard Errors
+
+Without going into too much detail, the sampling variance (i.e., squared value of the standard error) can be approximated by the *curvature* of the likelihood function around the neighborhood of the maximum likelihood estimate. This is only an approximation, and is generally an underestimate unless the sample size is large. Therefore, the estimated standard errors are usually called the *asymptotic* standard errors, meaning they are good estimates when the sample size is large.
+
+In R:
+
+```{r}
+# Asympotitc standard error (ASE) from lme4
+vcov(m_lv2)
+```
+
+The standard errors are the **square root values of the diagonal elements.**
+
+```{r}
+sqrt(diag(vcov(m_lv2)))  # check with the standard errors in the model
+```
+
+# ML vs REML
+
+We'll use the cross-level interaction model on the subset
+
+```{r crlv_int-reml}
+# Cluster-mean centering
+hsbsub <- hsbsub %>%
+    group_by(id) %>%   # operate within schools
+    mutate(ses_cm = mean(ses),   # create cluster means (the same as `meanses`)
+           ses_cmc = ses - ses_cm) %>%   # cluster-mean centered
+    ungroup()  # exit the "editing within groups" mode
+# Default is REML
+crlv_int <- lmer(mathach ~ meanses + sector * ses_cmc + (ses_cmc | id),
+                 data = hsbsub)
+# Use REML = FALSE for ML
+crlv_int_ml <- lmer(mathach ~ meanses + sector * ses_cmc + (ses_cmc | id),
+                    data = hsbsub, REML = FALSE)
+# Alternatively, you can use refitML()
+# refitML(crlv_int_ml)
+# Compare the models
+msummary(list("REML" = crlv_int,
+              "ML" = crlv_int_ml))
+```
+
+Notice that the standard errors are generally larger for REML than for ML, and it's generally more accurate with REML in small samples. Also the $\tau^2$ estimates (i.e., labelled `sd__(Intercept)` for $\tau^2_0$ and `sd__ses_cmc` for $\tau^2_1$) are larger (and more accurately estimated) for REML.
+
+To see more details on how `lme4` iteratively tries to arrive at the REML/ML estimates, try
+
+```{r crlv_int-verbose}
+crlv_int2 <- lmer(mathach ~ meanses + sector * ses_cmc + (ses_cmc | id),
+                  data = hsbsub, verbose = 1)
+```
+
+The numbers shown above are the *deviance*, that is, -2 $\times$ log-likelihood. Because probabilities (as well as likelihood) are less than or equal to 1, the log will be less than or equal to 0, meaning that the log likelihood values are generally negative. Multiplying it by -2 results in positive deviance that is a bit easier to work with (and the factor 2 is related to converting a normal distribution to a $\chi^2$ distribution). 
+
+# Testing Fixed Effects
+
+To test the null that a predictor has a non-zero coefficient given other predictors in the model, an easy way is to use the likelihood-based 95% CI (also called the profile-likelihood CI, as discussed in your text):
+
+```{r confint-crlv_int}
+# Use parm = "beta_" for only fixed effects
+confint(crlv_int, parm = "beta_")
+```
+
+If 0 is not in the 95% CI, the null is rejected at .05 significance level. This is basically equivalent to the likelihood ratio test, which can be obtained by comparing the model without one of the coefficients (e.g., the cross-level interaction):
+
+```{r anova-crlv_int}
+model_no_crlv <- lmer(mathach ~ meanses + sector + ses_cmc + (ses_cmc | id),
+                      data = hsbsub)
+# Note: lme4 will refit the model to use ML when performing LRT
+anova(crlv_int, model_no_crlv)
+```
+
+Or with the `drop1()` function and adding the formula:
+
+```{r drop1-crlv_int}
+# Note: lme4 will refit the model to use ML when performing LRT for fixed
+# effects
+drop1(crlv_int, ~ meanses + sector * ses_cmc, test = "Chisq")
+```
+
+## Small-Sample Correction: Kenward-Roger Approximation of Degrees of Freedom
+
+In small sample situation (with < 50 clusters), the Kenward-Roger (KR) approximation of degrees of freedom will give more accurate standard errors and tests. To do this in R, you should load the `lmerTest` package before running the model. Since I've already run the model, I will load the package and convert the results using the `as_lmerModLmerTest()` function:
+
+```{r crlv_int-kr, message=FALSE}
+library(lmerTest)
+crlv_int_test <- as_lmerModLmerTest(crlv_int)
+# Try anova()
+anova(crlv_int_test, ddf = "Kenward-Roger")
+# Summary will print t test results
+summary(crlv_int_test, ddf = "Kenward-Roger")
+# Table (need to specify the `df_method` argument)
+msummary(list(`REML-KR` = crlv_int),
+         df_method = "Kenward")
+```
+
+You can see now `sector` was actually not significant (although it's part of an interaction so the test of the conditional effect may not be very meaningful). Note KR requires using REML. 
+
+***
+If you're interested in knowing more, KR is based on an $F$ test, as opposed to a $\chi^2$ test for LRT. When the denominator degrees of freedom for $F$ is large, which happens in large sample (with many clusters), the $F$ distribution converges to a $\chi^2$ distribution, so there is no need to know exactly the degrees of freedom. However, in small samples, these two look different, and to get more accurate $p$ values one needs to have a good estimate of the denominator degrees of freedom, but it's not straightforward with MLM, especially with unbalanced data (i.e., clusters having different sizes). There are several methods to approximate the degrees of freedom, but KR has generally been found to perform the best.
+
+***
+
+# Testing Random Slopes
+
+To test the null hypothesis that the random slope variance, $\tau^2_1$, is zero, one can again rely on the LRT. However, because $\tau^2_1$ is non-negative (i.e., zero or positive), using the regular LRT will lead to a overly conservative test, meaning that power is too small. Technically, as pointed out in your text, under the null the sampling distribution of the LRT will follow approximately a mixture $\chi^2$ distribution. There are several ways to improve the test, but as shown in LaHuis and Ferguson (2009, https://doi.org/10.1177/1094428107308984), a simple way is to divide the $p$ value you obtain from software by 2 so that it resembles a one-tailed test. 
+
+```{r ran_slp}
+ran_slp <- lmer(mathach ~ meanses + ses_cmc + (ses_cmc | id), data = hsbsub)
+# Compare to the model without random slopes
+m_bw <- lmer(mathach ~ meanses + ses_cmc + (1 | id), data = hsbsub)
+# Compute the difference in deviance (4356.769 - 4356.754)
+REMLcrit(m_bw) - REMLcrit(ran_slp)
+# Find the p value from a chi-squared distribution
+pchisq(REMLcrit(m_bw) - REMLcrit(ran_slp), df = 2, lower.tail = FALSE)
+# Need to divide the p by 2 for a one-tailed test
+```
+
+So the $p$ value in our example for testing the random slope variance was `r comma(pchisq(REMLcrit(m_bw) - REMLcrit(ran_slp), df = 2, lower.tail = FALSE) / 2)`, which suggested that **for the subsample, there was insufficient evidence that the slope between `ses_cmc` and `mathach` varied across schools.**
+
+You can also use `ranova()` to get the same results (again, the $p$ values need to be divded by 2)
+
+```{r ranova-ran_slp}
+ranova(ran_slp)
+```
+
+# Bootstrap
+
+The bootstrap is a simulation-based method to approximate the sampling distribution of parameter estimates. Indeed, you've already seen a version of it in previous weeks when we talk about simulation. In the previous weeks, we generated data assuming that the sample model perfectly described the population, which notably includes the normality assumption. That simulation method is also called *parametric bootstrap*. Here we'll use another version of the bootstrap, called the *residual bootstrap*, which does not assume that the normality assumptions hold for the population. You can check out [Lai (2021)](https://doi.org/10.1080/00273171.2020.1746902). 
+
+To perform the bootstrap, you'll need to supply functions that extract different parameter estimates or other quantities (e.g., effect sizes) from a fitted model. Below are some examples:
+
+## Fixed Effects
+
+```{r load-bootmlm}
+library(boot)
+# If you have not installed bootmlm, you can uncomment the following line:
+# remotes::install_github("marklhc/bootmlm")
+library(bootmlm)
+```
+
+> Note: Because running the bootstrap takes a long time, you can include the chunk option `cache = TRUE` so that when knitting the file, it will not rerun the chunk unless the content of it has been changed. 
+
+```{r boot-ci-fixed, cache = TRUE, warning = FALSE, message = FALSE}
+# This takes a few minutes to run
+boot_crlv_int <- bootstrap_mer(
+    crlv_int,  # model
+    # function for extracting information from model (fixef = fixed effect)
+    fixef,
+    nsim = 1999,  # number of bootstrap samples
+    type = "residual"  # residual bootstrap
+)
+# Bootstrap CI for cross-level interaction (index = 5 for 5th coefficient)
+# Note: type = "perc" extracts the percentile CI, which is one of the several
+# possible CI options with the bootstrap
+boot.ci(boot_crlv_int, index = 5, type = "perc")
+```
+
+## Variance Components
+
+Extracting variance components from `lmer()` results requires a little bit more efforts.
+
+```{r boot-ci-vc, cache = TRUE, warning = FALSE, message = FALSE}
+ran_slp <- lmer(mathach ~ meanses + ses_cmc + (ses_cmc | id), data = hsbsub)
+# Define function to extract variance components
+get_vc <- function(object) {
+    vc_df <- data.frame(VarCorr(object))
+    vc_df[, "vcov"]
+}
+# Verfiy that the function extracts the right quantities
+get_vc(ran_slp)
+# This again takes a few minutes to run
+boot_ran_slp <- bootstrap_mer(
+    ran_slp,  # model
+    # function for extracting information from model (random effect variances)
+    get_vc,
+    nsim = 1999,  # number of bootstrap samples
+    type = "residual"  # residual bootstrap
+)
+# Bootstrap CI for random slope variance (index = 2)
+boot.ci(boot_ran_slp, index = 2, type = "perc")
+```
+
+## $R^2$
+
+```{r boot-ci-r2, cache = TRUE, warning = FALSE, message = FALSE}
+# This again takes a few minutes
+boot_r2 <- bootstrap_mer(crlv_int, MuMIn::r.squaredGLMM, nsim = 1999,
+                         type = "residual")
+boot.ci(boot_r2, index = 1, type = "perc")  # index = 1 for marginal R2
+```
+
+You can check the bootstrap sampling distribution using
+
+```{r plot-boot-r2}
+plot(boot_r2, index = 1)
+```
+
+### Bonus: Bias-corrected estimates
+
+The bootstrap method is commonly used for obtaining standard errors and confidence intervals. You can get the bootstrap standard error:
+
+```{r boot-r2}
+boot_r2
+```
+
+The above also showed the original estimate for the marginal $R^2$ (in row 1), `r boot_r2$t0[1]`, and the estimated bias using the bootstrap, which suggested that the bias is slightly upward. Therefore, one can obtain the bias-corrected estimate by 
+
+$$\text{Bias-corrected estimate} = \text{Original estimate} - \text{Bias}$$
+
+You can also use the following R code:
+
+```{r bc-boot-r2}
+# Bias
+mean(boot_r2$t[, 1]) - boot_r2$t0[1]  # the first index is marginal R^2; second is conditional R^2
+# Bias-corrected estimate
+2 * boot_r2$t0[1] - mean(boot_r2$t[, 1])
+```
+
+# Bayesian (Markov Chain Monte Carlo; MCMC) Estimation
+
+## Using `brms`
+
+Basically, just change `lmer()` to `brm()`.
+
+```{r}
+crlv_int_brm <- brm(mathach ~ meanses + sector * ses_cmc + (ses_cmc | id),
+                    data = hsbsub,
+                    # cache results as brms takes a long time to run
+                    file = "brms_cached_crlv_int")
+```
+
+This takes longer to run; however, the payoff is great, as 
+
+- Bayesian estimation generally has better small sample properties,
+- it solves many of the convergence issues you will run into using `lme4`,
+- `brms` supports many more complex models (see [Table 1 of this paper](https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf); e.g., spatial and temporal correlations; zero-inflated and survival models; mediation; meta-analysis)
+- `brms` and Bayesian estimation are getting more and more popular in recent MLM literature
+
+For more complex model, using `brms` may actually save you time for troubleshooting why your model does not converge.
+
+Here is a summary of the results
+
+```{r}
+summary(crlv_int_brm)
+```
+
+The terms under "Group-Level Effects" are the random effect standard deviations (i.e., the $\tau$s). The terms under "Population-Level Effects" are the fixed effects (i.e., the $\gamma$s). Note that with Bayesian, you generally get standard errors for everything (in the column "Est.Error").
+
+## Plotting
+
+You can use the `conditional_effects()` function
+
+```{r}
+plot(
+    conditional_effects(crlv_int_brm),
+    points = TRUE,  # show data
+    point_args = list(size = 0.5)  # make points smaller
+)
+```
+
+The `sjPlot::plot_model()` function also works; you can try it yourself.
+
+## Tables
+
+`modelsummary::msummary()` also works; for now, however, you'll need to get the intervals instead of the standard error in the table.
+
+```{r}
+msummary(list("Bayesian" = crlv_int_brm),
+         estimate = "{estimate} [{conf.low}, {conf.high}]",
+         statistic = NULL)
+```
+
+# Bonus: More on Maximum Likelihood
+
+If you are a stat/quant major or are interested in the math, then you may want to study the equation a little bit. 
+
+The mixed model can be written in matrix form. Let $\bv y_j = [\bv y_1, \bv y_2, \ldots, \bv y_J]^\top$ be the column vector of length $N$ for the outcome variable, $\bv X$ be the $N \times p$ predictor matrix (with the first column as the intercept), and $\bv Z$ be the $N \times Jq$ design matrix for the random effects with $q$ being the number of random coefficients. To make things more concrete, if we have the model
+
+```{r m1, message = FALSE, echo = FALSE}
+m1 <- lmer(mathach ~ meanses + ses + (ses | id), data = hsball)
+```
+
+$\bv y$ is the outcome `mathach`
+
+```{r m1_y}
+matrix(head(getME(m1, "y")))
+```
+
+$\bv X$ is a $N \times 3$ matrix, with the first column containing all 1s (for the intercept), the second column is `meanses`, and the third column is `ses`
+
+```{r m1_X}
+head(getME(m1, "X"))
+```
+
+And $\bv Z$ is a block-diagonal matrix $\mathrm{diag}[\bv Z_1, \bv Z_2, \ldots, \bv Z_J]$, where each $\bv Z_j$ is an $n_j \times 2$ matrix with the first column containing all 1s and the second column containing the `ses` variable for cluster $j$
+
+```{r m1_Z}
+dim(getME(m1, "Z"))
+# Show first two blocks
+getME(m1, "Z")[1:72, 1:4]
+```
+
+The matrix form of the model is
+$$\bv y = \bv X \bv \gamma + \bv Z \bv u + \bv e,$$
+with $\bv \gamma$ being a $N \times p$ vector of fixed effects, $\bv \tau$ a vector of random effect variances, $\sigma$ the level-1 error term, $\bv u$ containing the $u_0$ and $u_1$ values for all clusters (320 in total), and $\bv e$ containing the level-1 errors. The distributional assumptions are
+$\bv u_j \sim N_2(\bv 0, \bv G)$ and $e_{ij} \sim N(0, \sigma)$. 
+
+The marginal distribution of $\bv y$ is thus
+$$\bv y \sim N_p\left(\bv X \bv \gamma, \bv V(\bv \tau, \sigma)\right),$$
+where $\bv V(\bv \tau, \sigma) = \bv Z \bv G \bv Z^\top + \sigma^2 \bv I$ with $\bv I$ being an $N \times N$ identity matrix. 
+
+The log-likelihood function for a multilevel model is
+$$\ell(\bv \gamma, \bv \tau, \sigma; \bv y) = - \frac{1}{2} \left\{\log | \bv V(\bv \tau, \sigma)| + (\bv y - \bv X \bv \gamma)^\top \bv V^{-1}(\bv \tau, \sigma) (\bv y - \bv X \bv \gamma) \right\} + K$$
+with $K$ not involving the model parameters. Check out [this paper](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf) if you want to learn more about the log likelihood function used in `lme4`. 
+
+> Note: When statistician says log it means the natural logarithm, i.e., log with base e (sometimes written as ln)
+
+## Standard Errors
+
+For the fixed effects, the sampling variance has the analytic form
+
+$$(\bv X^\top \bv V^{-1} \bv X)^{-1}$$
+
+```{r}
+# Asympotitc standard error (ASE) from lme4
+vcov(m_lv2)
+# ASE using formula
+ase <- function(X = cbind(1, m_lv2@frame$meanses),
+                V = V_m_lv2) {
+                    solve(crossprod(X, solve(V, X)))
+                }
+ase()  # the results are identical
+```

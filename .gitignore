@@ -13,6 +13,9 @@
 # generated site
 /_site/
 
+# Cached files
+*_cache/
+
 # brms cached files
 brms_cached_*\.rds
 
