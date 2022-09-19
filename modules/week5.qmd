@@ -17,7 +17,7 @@ source("../render_slides.R", local = TRUE)
 
 By the end of this module, you will be able to 
 
-- Describe conceptually what **likelihood function** and maximum likelihood estimation are
+- Describe, conceptually, what **likelihood function** and maximum likelihood estimation are
 - Describe the differences between **maximum likelihood** and **restricted maximum likelihood**
 - Conduct statistical tests for fixed effects, and use the **small-sample correction** when needed
 - Use the **likelihood ratio test** to test random slopes
@@ -124,7 +124,7 @@ practice_question(
 add_youtube("_CnSRV_hmqE")
 ```
 
-The LRT has been used widely across many statistical methods, so it's useful to get familiar to doing it by hand (as it may not be available in all software in all procedures).
+The LRT has been used widely across many statistical methods, so it's helpful to get familiar with doing it by hand (as it may not be available in all software in all procedures).
 
 ::: {.callout-note icon=false}
 
@@ -144,7 +144,7 @@ m_contextual <- lmer(mathach ~ meanses + ses + (1 | id),
 msummary(list(m_lv2, m_contextual))
 ```
 
-Using R and the `pchisq()` function, what is the $\chi^2$ (or X2) test statistic and the $p$ value for the fixed effect coefficient for `ses`?
+Using R and the `pchisq()` function, what are the $\chi^2$ (or X2) test statistic and the $p$ value for the fixed effect coefficient for `ses`?
 
 ```{r}
 #| results: asis
@@ -168,7 +168,7 @@ add_youtube("YvwiNHqiJI0")
 
 ## Check your learning
 
-From the results below, what is the test statistic and the $p$ value for the fixed effect coefficient for `meanses`?
+From the results below, what are the test statistic and the $p$ value for the fixed effect coefficient for `meanses`?
 
 ```{r kr-contextual, message=FALSE, echo=FALSE}
 library(tidyverse)
@@ -209,10 +209,10 @@ add_youtube("inNGu6fqDtE")
 #| results: asis
 practice_question(
     "When testing whether the variance of a random slope term is zero, what needs to be done?",
-    answer = "The p value needs to be divided by 2, because the random slope variance can only be zero or positive",
-    options = c("The p value needs to be divided by 2, because the random slope variance can only be zero or positive",
-                "The p value needs to be divided by 2 so that the results will be a two-tailed test",
-                "The p value needs to be divided by 2, because it is a two degrees of freedom test"),
+    answer = "The p-value needs to be divided by 2, because the random slope variance can only be zero or positive",
+    options = c("The p-value needs to be divided by 2, because the random slope variance can only be zero or positive",
+                "The p-value needs to be divided by 2 so that the results will be a two-tailed test",
+                "The p-value needs to be divided by 2, because it is a two degrees of freedom test"),
     type = "radio"
 )
 ```
@@ -244,7 +244,7 @@ practice_question(
 ```{r}
 #| results: asis
 practice_question(
-    "Which distribution is used to make conclusion for Bayesian parameter estimation?",
+    "Which distribution is used to make statistical conclusions for Bayesian parameter estimation?",
     answer = "Posterior distribution",
     options = c("Prior distribution",
                 "Likelihood",
@@ -308,7 +308,7 @@ check_question(
 
 If $\sigma$ is not known, the maximum likelihood estimate is
 $$\hat \sigma = \sqrt{\frac{\sum_{i = 1}^N (Y_i - \bar X)^2}{N}},$$
-which uses $N$ in the denominator instead of $N - 1$. Because of this, in small sample, maximum likelihood estimate tends to be biased, meaning that on average it tends to underestimate the population variance. 
+which uses $N$ in the denominator instead of $N - 1$. Because of this, in small samples, maximum likelihood estimates tend to be biased, meaning that, on average, it tends to underestimate the population variance. 
 
 One useful property of maximum likelihood estimation is that the standard error can be approximated by the inverse of the curvature of the likelihood function at the peak. The two graphs below show that with a larger sample, the likelihood function has a higher curvature (i.e., steeper around the peak), which results in a smaller estimated standard error. 
 

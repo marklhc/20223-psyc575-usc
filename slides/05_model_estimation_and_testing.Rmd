@@ -30,7 +30,7 @@ theme_set(theme_bw())
 
 # Week Learning Objectives
 
-- Describe conceptually what the **likelihood function** and maximum likelihood estimation are
+- Describe, conceptually, what the **likelihood function** and maximum likelihood estimation are
 
 - Describe the differences between **maximum likelihood** and **restricted maximum likelihood**
 
@@ -173,7 +173,7 @@ REML has corrected degrees of freedom for the variance component estimates (like
 
 - REML is generally preferred in smaller samples
 
-- The difference is small with large number of clusters
+- The difference is small when the number of clusters is large
 
 Technically speaking, REML only estimates the variance components<sup>1</sup>
 
@@ -249,7 +249,7 @@ class: inverse, middle, center
 
 ### Fixed effects $(\gamma)$
 
-- Usually the likelihood-based CI/likelihood-ratio (LRT; $\chi^2$) test is sufficient
+- Usually, the likelihood-based CI/likelihood-ratio (LRT; $\chi^2$) test is sufficient
     * Require ML (as fixed effects are not part of the likelihood function in REML)
 - Small sample (10--50 clusters): Kenward-Roger approximation of degrees of freedom
 - Non-normality: Residual bootstrap<sup>1</sup>
@@ -314,7 +314,7 @@ anova(m_lv2, ran_int)  # Automatically use ML
 
 .pull-left[
 
-The LRT relies on the assumption that the deviance under the null follows a $\chi^2$ distribution, which is not likely to hold in small samples
+LRT assumes that the deviance under the null follows a $\chi^2$ distribution, which is not likely to hold in small samples
 
 - Inflated Type I error rates
 
@@ -450,7 +450,7 @@ class: inverse, middle, center
 
 ### Should you include random slopes?
 
-Theoretically yes unless you're certain that the slopes are the same for every groups
+Theoretically, yes, unless you're certain that the slopes are the same for every group
 
 However, frequentist methods usually crash with more than two random slopes
 
@@ -568,7 +568,7 @@ class: inverse, middle, center
 
 ### Posterior $\propto$ Likelihood $\times$ Prior
 
-- So in addition to the likelihood function (as in ML/REML), we need prior information
+- So, in addition to the likelihood function (as in ML/REML), we need prior information
 
 - Prior: Belief about a parameter before looking at the data
 
@@ -645,7 +645,7 @@ class: inverse, middle, center
 # What is Likelihood?
 
 .pull-left[
-### Let’s say we want to estimate the population mean math achievement score $(\mu)$
+### Let's say we want to estimate the population mean math achievement score $(\mu)$
 
 We need to make some assumptions:
 

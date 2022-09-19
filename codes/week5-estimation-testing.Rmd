@@ -33,7 +33,7 @@ library(sjPlot)  # for plotting effects
 hsball <- read_sav(here("data_files", "hsball.sav"))
 ```
 
-To demonstrate differences in smaller samples, we will use a subset of 16 schools
+To demonstrate differences in smaller samples, we will use a subset of 16 schools.
 
 ```{r hsbsub}
 # Randomly select 16 school ids
@@ -47,7 +47,7 @@ hsbsub <- hsball %>%
 
 ## Example: $\ell(\gamma_{01})$
 
-We'll use the model with `meanses` as the predictor on the full data set (`hsball`), and use R to write the log-likelihood function for $\gamma_{01}$
+We'll use the model with `meanses` as the predictor on the original data set (`hsball`), and use R to write the log-likelihood function for $\gamma_{01}$
 
 ```{r m_lv2, message = FALSE, echo = FALSE}
 m_lv2 <- lmer(mathach ~ meanses + (1 | id), data = hsball)
@@ -79,7 +79,7 @@ ggplot(tibble(gamma01 = c(5, 7)), aes(x = gamma01)) +
 
 # Standard Errors
 
-Without going into too much detail, the sampling variance (i.e., squared value of the standard error) can be approximated by the *curvature* of the likelihood function around the neighborhood of the maximum likelihood estimate. This is only an approximation, and is generally an underestimate unless the sample size is large. Therefore, the estimated standard errors are usually called the *asymptotic* standard errors, meaning they are good estimates when the sample size is large.
+Without going into too much detail, the sampling variance (i.e., the squared value of the standard error) can be approximated by the *curvature* of the likelihood function around the neighborhood of the maximum likelihood estimate. This is however only an approximation, and is generally an underestimate unless the sample size is large. Therefore, the estimated standard errors are usually called the *asymptotic* standard errors, meaning they converge to the correct values when the sample size is large.
 
 In R:
 
@@ -127,18 +127,18 @@ crlv_int2 <- lmer(mathach ~ meanses + sector * ses_cmc + (ses_cmc | id),
                   data = hsbsub, verbose = 1)
 ```
 
-The numbers shown above are the *deviance*, that is, -2 $\times$ log-likelihood. Because probabilities (as well as likelihood) are less than or equal to 1, the log will be less than or equal to 0, meaning that the log likelihood values are generally negative. Multiplying it by -2 results in positive deviance that is a bit easier to work with (and the factor 2 is related to converting a normal distribution to a $\chi^2$ distribution). 
+The numbers shown above are the *deviance*, that is, -2 $\times$ log-likelihood. Because probabilities (as well as likelihood) are less than or equal to 1, the log will be less than or equal to 0, meaning that the log-likelihood values are generally negative. Multiplying it by -2 results in deviance, which is positive and is a bit easier to work with (and the factor 2 is related to converting a normal distribution to a $\chi^2$ distribution). 
 
 # Testing Fixed Effects
 
-To test the null that a predictor has a non-zero coefficient given other predictors in the model, an easy way is to use the likelihood-based 95% CI (also called the profile-likelihood CI, as discussed in your text):
+An easy way To test the null that a predictor has a non-zero fixed-effect coefficient (given other predictors in the model) is to use the likelihood-based 95% CI (also called the profile-likelihood CI, as discussed in your text):
 
 ```{r confint-crlv_int}
 # Use parm = "beta_" for only fixed effects
 confint(crlv_int, parm = "beta_")
 ```
 
-If 0 is not in the 95% CI, the null is rejected at .05 significance level. This is basically equivalent to the likelihood ratio test, which can be obtained by comparing the model without one of the coefficients (e.g., the cross-level interaction):
+If 0 is not in the 95% CI, the null is rejected at .05 significance level. This is equivalent to the likelihood ratio test, which can be obtained by comparing the model without one of the coefficients (e.g., the cross-level interaction):
 
 ```{r anova-crlv_int}
 model_no_crlv <- lmer(mathach ~ meanses + sector + ses_cmc + (ses_cmc | id),
@@ -157,7 +157,7 @@ drop1(crlv_int, ~ meanses + sector * ses_cmc, test = "Chisq")
 
 ## Small-Sample Correction: Kenward-Roger Approximation of Degrees of Freedom
 
-In small sample situation (with < 50 clusters), the Kenward-Roger (KR) approximation of degrees of freedom will give more accurate standard errors and tests. To do this in R, you should load the `lmerTest` package before running the model. Since I've already run the model, I will load the package and convert the results using the `as_lmerModLmerTest()` function:
+In small sample situations (with < 50 clusters), the Kenward-Roger (KR) approximation of degrees of freedom will give more accurate standard errors and tests. To do this in R, you should load the `lmerTest` package before running the model. Since I've already run the model, I will load the package and convert the results using the `as_lmerModLmerTest()` function:
 
 ```{r crlv_int-kr, message=FALSE}
 library(lmerTest)
@@ -166,21 +166,24 @@ crlv_int_test <- as_lmerModLmerTest(crlv_int)
 anova(crlv_int_test, ddf = "Kenward-Roger")
 # Summary will print t test results
 summary(crlv_int_test, ddf = "Kenward-Roger")
-# Table (need to specify the `df_method` argument)
+# Table (need to specify the `ci_method` argument)
 msummary(list(`REML-KR` = crlv_int),
-         df_method = "Kenward")
+         estimate = "{estimate} [{conf.low}, {conf.high}]",
+         statistic = NULL,
+         ci_method = "Kenward")
 ```
 
-You can see now `sector` was actually not significant (although it's part of an interaction so the test of the conditional effect may not be very meaningful). Note KR requires using REML. 
+You can see now `sector` was actually not significant (although it is part of an interaction, so the coefficient reflects a conditional effect). Note KR requires using REML.
 
 ***
-If you're interested in knowing more, KR is based on an $F$ test, as opposed to a $\chi^2$ test for LRT. When the denominator degrees of freedom for $F$ is large, which happens in large sample (with many clusters), the $F$ distribution converges to a $\chi^2$ distribution, so there is no need to know exactly the degrees of freedom. However, in small samples, these two look different, and to get more accurate $p$ values one needs to have a good estimate of the denominator degrees of freedom, but it's not straightforward with MLM, especially with unbalanced data (i.e., clusters having different sizes). There are several methods to approximate the degrees of freedom, but KR has generally been found to perform the best.
+
+If you're interested in knowing more, KR is based on an $F$ test instead of a $\chi^2$ test for LRT. When the denominator degrees of freedom for $F$ is large, which happens in large samples (with many clusters), the $F$ distribution converges to a $\chi^2$ distribution, so there is no need to know what exactly the degrees of freedom are. However, in small samples, these two look different, and to get more accurate $p$ values, one needs to have a good estimate of the denominator degrees of freedom, but it's not straightforward with MLM, especially with unbalanced data (i.e., clusters having different sizes). There are several methods to approximate the degrees of freedom; KR is generally found to perform the best.
 
 ***
 
 # Testing Random Slopes
 
-To test the null hypothesis that the random slope variance, $\tau^2_1$, is zero, one can again rely on the LRT. However, because $\tau^2_1$ is non-negative (i.e., zero or positive), using the regular LRT will lead to a overly conservative test, meaning that power is too small. Technically, as pointed out in your text, under the null the sampling distribution of the LRT will follow approximately a mixture $\chi^2$ distribution. There are several ways to improve the test, but as shown in LaHuis and Ferguson (2009, https://doi.org/10.1177/1094428107308984), a simple way is to divide the $p$ value you obtain from software by 2 so that it resembles a one-tailed test. 
+To test the null hypothesis that the random slope variance, $\tau^2_1$, is zero, one can again rely on the LRT. However, because $\tau^2_1$ is non-negative (i.e., zero or positive), using the regular LRT will lead to an overly conservative test, meaning that power is too small. Technically, as pointed out in your text, under the null, the sampling distribution of the LRT will follow approximately a mixture $\chi^2$ distribution. There are several ways to improve the test, but as shown in LaHuis and Ferguson (2009, https://doi.org/10.1177/1094428107308984), a simple way is to divide the $p$ value you obtain from software by 2 so that it resembles a one-tailed test. 
 
 ```{r ran_slp}
 ran_slp <- lmer(mathach ~ meanses + ses_cmc + (ses_cmc | id), data = hsbsub)
@@ -195,7 +198,7 @@ pchisq(REMLcrit(m_bw) - REMLcrit(ran_slp), df = 2, lower.tail = FALSE)
 
 So the $p$ value in our example for testing the random slope variance was `r comma(pchisq(REMLcrit(m_bw) - REMLcrit(ran_slp), df = 2, lower.tail = FALSE) / 2)`, which suggested that **for the subsample, there was insufficient evidence that the slope between `ses_cmc` and `mathach` varied across schools.**
 
-You can also use `ranova()` to get the same results (again, the $p$ values need to be divded by 2)
+You can also use `ranova()` to get the same results (again, the $p$ values need to be divided by 2)
 
 ```{r ranova-ran_slp}
 ranova(ran_slp)
@@ -203,7 +206,7 @@ ranova(ran_slp)
 
 # Bootstrap
 
-The bootstrap is a simulation-based method to approximate the sampling distribution of parameter estimates. Indeed, you've already seen a version of it in previous weeks when we talk about simulation. In the previous weeks, we generated data assuming that the sample model perfectly described the population, which notably includes the normality assumption. That simulation method is also called *parametric bootstrap*. Here we'll use another version of the bootstrap, called the *residual bootstrap*, which does not assume that the normality assumptions hold for the population. You can check out [Lai (2021)](https://doi.org/10.1080/00273171.2020.1746902). 
+The bootstrap is a simulation-based method to approximate the sampling distribution of parameter estimates. Indeed, you've already seen a version of it in previous weeks when we talk about simulation. In previous weeks, we generated data assuming that the sample model perfectly described the population, including the normality assumption. That simulation method is also called *parametric bootstrap*. Here we'll use another version of the bootstrap, called the *residual bootstrap*, which does not assume normality for the population. You can check out [Lai (2021)](https://doi.org/10.1080/00273171.2020.1746902). 
 
 To perform the bootstrap, you'll need to supply functions that extract different parameter estimates or other quantities (e.g., effect sizes) from a fitted model. Below are some examples:
 
@@ -216,7 +219,7 @@ library(boot)
 library(bootmlm)
 ```
 
-> Note: Because running the bootstrap takes a long time, you can include the chunk option `cache = TRUE` so that when knitting the file, it will not rerun the chunk unless the content of it has been changed. 
+> Note: Because running the bootstrap takes a long time, you can include the chunk option `cache = TRUE` so that when knitting the file, it will not rerun the chunk unless the code has been changed. 
 
 ```{r boot-ci-fixed, cache = TRUE, warning = FALSE, message = FALSE}
 # This takes a few minutes to run
@@ -228,14 +231,14 @@ boot_crlv_int <- bootstrap_mer(
     type = "residual"  # residual bootstrap
 )
 # Bootstrap CI for cross-level interaction (index = 5 for 5th coefficient)
-# Note: type = "perc" extracts the percentile CI, which is one of the several
+# Note: type = "perc" extracts the percentile CI, one of the several
 # possible CI options with the bootstrap
 boot.ci(boot_crlv_int, index = 5, type = "perc")
 ```
 
 ## Variance Components
 
-Extracting variance components from `lmer()` results requires a little bit more efforts.
+Extracting variance components from `lmer()` results requires a bit more efforts.
 
 ```{r boot-ci-vc, cache = TRUE, warning = FALSE, message = FALSE}
 ran_slp <- lmer(mathach ~ meanses + ses_cmc + (ses_cmc | id), data = hsbsub)
@@ -314,7 +317,7 @@ This takes longer to run; however, the payoff is great, as
 - `brms` supports many more complex models (see [Table 1 of this paper](https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf); e.g., spatial and temporal correlations; zero-inflated and survival models; mediation; meta-analysis)
 - `brms` and Bayesian estimation are getting more and more popular in recent MLM literature
 
-For more complex model, using `brms` may actually save you time for troubleshooting why your model does not converge.
+For more complex models, using `brms` may save you time troubleshooting why your model does not converge.
 
 Here is a summary of the results
 
@@ -340,7 +343,7 @@ The `sjPlot::plot_model()` function also works; you can try it yourself.
 
 ## Tables
 
-`modelsummary::msummary()` also works; for now, however, you'll need to get the intervals instead of the standard error in the table.
+`modelsummary::msummary()` also works; for now, however, you'll need to get the intervals instead of the standard errors in the table.
 
 ```{r}
 msummary(list("Bayesian" = crlv_int_brm),
@@ -350,7 +353,7 @@ msummary(list("Bayesian" = crlv_int_brm),
 
 # Bonus: More on Maximum Likelihood
 
-If you are a stat/quant major or are interested in the math, then you may want to study the equation a little bit. 
+If you are a stat/quant major or are interested in the math, then you should study the equation a little bit. 
 
 The mixed model can be written in matrix form. Let $\bv y_j = [\bv y_1, \bv y_2, \ldots, \bv y_J]^\top$ be the column vector of length $N$ for the outcome variable, $\bv X$ be the $N \times p$ predictor matrix (with the first column as the intercept), and $\bv Z$ be the $N \times Jq$ design matrix for the random effects with $q$ being the number of random coefficients. To make things more concrete, if we have the model
 
@@ -374,7 +377,7 @@ And $\bv Z$ is a block-diagonal matrix $\mathrm{diag}[\bv Z_1, \bv Z_2, \ldots, 
 
 ```{r m1_Z}
 dim(getME(m1, "Z"))
-# Show first two blocks
+# Show the first two blocks
 getME(m1, "Z")[1:72, 1:4]
 ```
 
@@ -389,9 +392,9 @@ where $\bv V(\bv \tau, \sigma) = \bv Z \bv G \bv Z^\top + \sigma^2 \bv I$ with $
 
 The log-likelihood function for a multilevel model is
 $$\ell(\bv \gamma, \bv \tau, \sigma; \bv y) = - \frac{1}{2} \left\{\log | \bv V(\bv \tau, \sigma)| + (\bv y - \bv X \bv \gamma)^\top \bv V^{-1}(\bv \tau, \sigma) (\bv y - \bv X \bv \gamma) \right\} + K$$
-with $K$ not involving the model parameters. Check out [this paper](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf) if you want to learn more about the log likelihood function used in `lme4`. 
+with $K$ not involving the model parameters. Check out [this paper](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf) if you want to learn more about the log-likelihood function used in `lme4`. 
 
-> Note: When statistician says log it means the natural logarithm, i.e., log with base e (sometimes written as ln)
+> Note: When statistician says log, it means the natural logarithm, i.e., log with base e (sometimes written as ln)
 
 ## Standard Errors
 
