@@ -1,0 +1,361 @@
+---
+title: "Model Diagnostics"
+subtitle: "PSYC 575"
+author: "Mark Lai"
+institute: "University of Southern California"
+date: "2021/09/25 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      ratio: '16:10'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r, child = "slide_settings.RMarkdown"}
+```
+
+$$\newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}$$
+
+```{r load-pkg, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(haven)
+library(here)
+library(lme4)
+library(broom.mixed)
+theme_set(theme_bw())
+```
+
+# Week Learning Objectives
+
+- Describe the major **assumptions** in basic multilevel models
+
+- Conduct analyses to decide whether **cluster means** and **random slopes** should be included
+
+- Use graphical tools to diagnose assumptions of **linearity**, **homoscedasticity** (equal variance), and **normality**
+
+- Solve some basic **convergence issues**
+
+- **Report** results of a multilevel analysis based on established guidelines
+
+---
+class: center, middle
+
+# Multilevel "Model" . . . 
+
+What is a model?
+
+--
+
+It is a set of **assumptions** about how the data are generated
+
+---
+
+# Two Components of a Parametric Model
+
+## Functional Form
+
+.pull-left[
+
+$$\mathrm{E}(Y_{ij} | \mathbf{X}, \mathbf{W}) = \gamma_{00} + \gamma_{10} X_{1ij} + \ldots + \gamma_{01} W_{1j} + \ldots$$
+
+Versus:
+
+$$\mathrm{E}(Y_{ij} | \mathbf{X}, \mathbf{W}) = \exp(\gamma_{00} + \gamma_{10} X_{1ij} + \ldots + \gamma_{01} W_{1j} + \ldots)$$
+
+]
+
+.pull-right[
+
+```{r linear, out.width = '90%'}
+p1 <- ggplot(tibble(x = c(-2, 2)), aes(x = x)) +
+    geom_blank() +
+    stat_function(fun = function(x) 0.5 * x) +
+    coord_fixed()
+p2 <- ggplot(tibble(x = c(-2, 2)), aes(x = x)) +
+    geom_blank() +
+    stat_function(fun = function(x) exp(-0.5 * x)) +
+    coord_fixed()
+gridExtra::grid.arrange(p1, p2)
+```
+
+]
+
+---
+
+# Two Components of a Parametric Model
+
+## Random Component
+
+I.e., distribution of random effects/errors
+
+$$\begin{bmatrix}
+    u_{0j} \\
+    u_{1j}
+  \end{bmatrix} \sim N \left(
+      \begin{bmatrix}
+        0 \\
+        0
+      \end{bmatrix}, 
+      \begin{bmatrix}
+        \tau^2_0 & \tau_{01} \\
+        \tau_{01} & \tau^2_1
+      \end{bmatrix}
+    \right)$$
+
+$$e_{ij} \sim N(0, \sigma)$$
+
+--
+
+Versus $e_{ij} \sim t_3(0, \sigma)$
+
+--
+
+Or $e_{ij} \sim N(0, \sigma_\color{red}{j})$, where different clusters $j$ have a different SD $\sigma_j$
+
+---
+class: inverse, middle, center
+
+# Assumptions of Basic MLM
+
+---
+
+# Five Assumptions in Normal Linear Models
+
+### <span style="color:red">L</span>inearity
+
+### <span style="color:red">I</span>ndependence of errors (at the highest level)
+
+### <span style="color:red">N</span>ormality
+
+### <span style="color:red">E</span>qual variance of errors (i.e., homoscedasticity)
+
+### Correct <span style="color:red">S</span>pecification of the model
+
+--
+
+&zwj;Importance: S, L, I > E, N
+
+---
+
+# Assumptions Are Important
+
+Your result is only as good as the assumptions
+
+- Garbage in, garbage out
+
+--
+
+```{r}
+knitr::include_graphics("img/Anscombe_quartet.png")
+```
+
+---
+
+# Correct Specification
+
+Fixed effects
+
+- Cluster means should be included (unless between coefficient = within coefficient)
+
+    * Otherwise, between and within coefficients are conflated
+
+- Relevant predictors should be included to answer the target research question
+
+    * E.g., Gender gap vs. gender gap adjusting for profession
+
+--
+
+Random effects
+
+- If random slope variance is not zero, omitting it leads to inflated Type I error rates for fixed effects
+
+    * Varying slopes could also be important information from the data
+
+---
+
+# Linearity
+
+Lack of linear association $\neq$ lack of association
+
+```{r m2, include = FALSE}
+# Read in the data (pay attention to the directory)
+hsball <- read_sav(here("data_files", "hsball.sav"))
+# Cluster-mean centering
+hsball <- hsball %>%
+  group_by(id) %>%  # operate within schools
+  mutate(ses_cm = mean(ses),  # create cluster means (the same as `meanses`)
+         ses_cmc = ses - ses_cm) %>%  # cluster-mean centered
+  ungroup()  # exit the "editing within groups" mode
+m2 <- lmer(mathach ~ sector + ses + ses_cm + (1 | id),
+  data = hsball
+)
+```
+
+```{r mmp-ses, message = FALSE, fig.asp = 0.5, out.width = '80%'}
+p1 <- augment(m2) %>%
+  ggplot(aes(x = ses, y = mathach)) +
+  geom_point(size = 0.7, alpha = 0.3) +
+  geom_smooth(col = "blue", se = FALSE) + # blue line from data
+  geom_smooth(aes(y = .fitted),
+    col = "red",
+    se = FALSE, linetype = "dashed"
+  )  # red line from model
+## Fake example: Add quadratic trend for ses
+hsball_quad <- hsball %>%
+  mutate(mathach = mathach + ses^2)
+m2_quad <- refit(m2, newresp = hsball_quad$mathach)
+p2 <- augment(m2_quad) %>%
+  ggplot(aes(x = ses, y = mathach)) +
+  geom_point(size = 0.7, alpha = 0.3) +
+  geom_smooth(col = "blue", se = FALSE) + # blue line from data
+  geom_smooth(aes(y = .fitted),
+    col = "red",
+    se = FALSE, linetype = "dashed"
+  )  # red line from model
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+---
+
+# Independence of Errors
+
+We use MLM because students within the same school are more similar (i.e., not independent)
+
+--
+
+If schools are from different school districts, they may also not be independent
+
+- Need a three-level model
+
+--
+
+Or, student A in school 1 is from the same neighborhood as student B in school 2
+
+- Cross-classified model
+
+--
+
+Temporal dependence
+
+- E.g., Repeated measures closer in time are more similar
+
+    * Autoregressive model
+
+---
+
+# Equal Variance of Errors (Homoscedasticity)
+
+Residual plots
+
+```{r std_resid-id, fig.asp = 0.5, out.width = '80%', message = FALSE}
+p1 <- augment(m2) %>%
+  filter(id %in% unique(id)[1:20]) %>%
+  ggplot(aes(x = factor(id), y = .resid)) +
+  geom_boxplot() +
+  stat_summary(fun = mad, geom = "line", aes(group = 1), col = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+p2 <- augment(m2) %>%
+  mutate(.std_resid = resid(m2, scaled = TRUE)) %>%
+  ggplot(aes(x = ses, y = .std_resid)) +
+  geom_point(size = 0.7, alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  geom_smooth(aes(y = sqrt(abs(.resid))), se = FALSE, col = "red")
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+---
+
+# Normality
+
+.pull-left[
+
+Quantile-quantile (QQ) plot
+
+* Whether the 1st, 5th, 10th, ... percentiles of the residuals correspond to the 1st, 5th, 10th, ... percentiles of a normal distribution
+
+Need to check both level 1 $(e)$ and level 2 $(u_0 \text{ and } u_1)$
+
+]
+
+.pull-right[
+
+```{r qq_lv1, fig.asp = 1, fig.width = 4.5}
+library(lattice)  # need this package to use the built-in functions
+qqmath(m2)  # just use the `qqmath()` function on the fitted model
+```
+
+]
+
+---
+
+# Examples of data for which a normal model is not good
+
+- Binary/ordinal outcome with < 5 categories (including the homework)
+
+- Count data (e.g., # binge drinking episodes; # of success in 5 trials)
+
+- Bounded data with ceiling/floor effects (e.g., depressive symptoms)
+
+- Reaction time
+
+---
+
+# Additional Issues
+
+- Outliers/influential observations
+    * Check coding error
+    * Don't drop outliers unless you adjust the standard errors accordingly, or use robust models
+
+--
+
+- Reliability (e.g., $\alpha$ coefficient)
+    * Reliability may be high at one level but low at another level
+    * See Lai (2021, doi: 10.1037/met0000287) for level-specific reliability
+        * You can use the `multilevel_alpha()` function from https://github.com/marklhc/mcfa_reliability_supp/blob/master/multilevel_alpha.R
+        * The procedure was recently implemented in the `semTools::compRelSEM()` function, thanks to Dr. Terrence D. Jorgensen.
+---
+class: inverse, middle, center
+
+# Dealing With Convergence Issues
+
+## See R codes
+
+---
+class: inverse, middle, center
+
+# Reporting Results
+
+---
+
+References
+- Chapter by McCoach (2019); Paper by Meteyard & Davies (2020)
+
+--
+
+Things to report:
+
+.pull-left[
+
+- Sample sizes
+- Model equations
+- Decisions and justifications for including or not including cluster means, centering, and random slopes
+- Estimation methods, software program/package, and version number
+- Intraclass correlation
+- Convergence issues and handling
+- Assumptions
+- Tables of fixed and random effect coefficients
+- Effect size
+
+]
+
+.pull-right[
+
+- Model comparison criteria and indices
+- Software code
+
+]
+

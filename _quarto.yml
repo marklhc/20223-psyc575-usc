@@ -34,6 +34,7 @@ website:
         - modules/week3.qmd
         - modules/week4.qmd
         - modules/week5.qmd
+        - modules/week6.qmd
 
     - id: codes
       title: "R code"
@@ -43,6 +44,7 @@ website:
         - codes/rcode3.qmd
         - codes/rcode4.qmd
         - codes/rcode5.qmd
+        - codes/rcode6.qmd
 
 format:
   html:

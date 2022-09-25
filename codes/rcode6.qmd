@@ -1,0 +1,19 @@
+---
+title: "R Codes (Week 6)"
+format:
+  html:
+    code-tools:
+      source: week6-mlm-diagnostic.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week6-mlm-diagnostic"
+---
+
+::: {.hidden}
+$$
+\newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}
+$$
+:::
+
+{{< include _rcode-common.qmd >}}

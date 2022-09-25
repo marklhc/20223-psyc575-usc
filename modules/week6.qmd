@@ -1,0 +1,220 @@
+---
+title: "Week 6"
+subtitle: "Model Diagnostics and Results Reporting"
+execute:
+  echo: false
+params:
+  slides: "06_model_diagnostics"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Describe the major **assumptions** in basic multilevel models
+- Conduct analyses to decide whether **cluster means** and **random slopes** should be included
+- Use graphical tools to diagnose assumptions of **linearity**, **homoscedasticity** (equal variance), and **normality**
+- Solve some basic **convergence issues**
+- **Report** results of a multilevel analysis based on established guidelines
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Snijders & Bosker ch 10
+    * Meteyard & Davies (2020; to be shared on Slack)
+    * [McCoach (2019 chapter)](https://www-taylorfrancis-com.libproxy2.usc.edu/books/e/9781315755649/chapters/10.4324/9781315755649-22) (USC SSO required)
+3. Attend the Tuesday session to learn some R skills and review last week's exercise
+4. Attend the Thursday session and participate in the class exercise
+4. Complete Homework 5
+
+# Lecture
+
+## Slides
+
+```{r}
+xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html")))
+```
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Model Diagnostics
+
+```{r}
+add_youtube("YcwLBSTY8aw")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "Homoscedasticity means",
+    answer = "Equal variance of errors",
+    options = c("Equal variance of errors",
+                "Each cluster has the same mean",
+                "The model resembles the data"),
+    type = "radio"
+)
+```
+
+## Assumptions of a Multilevel Model
+
+```{r}
+add_youtube("dhh5twY9pwE")
+```
+
+Note: $\mathrm{E}(Y)$ can also be written as $\hat Y$, the predicted value of $Y$ based on the predictor values.
+
+The linear model is also flexible as it can allow predictors that are curvillinear terms, such as $Y = b_0 + b_1 X_1 + b_2 X_1^2$, or $Y = b_0 + b_1 \log(X_1)$, or more generally
+$$Y = b_0 + \sum_{i}^p b_i f(x_1, x_2, \ldots)$$
+The "linear" part in a linear model actually means that $Y$ is a linear function of the coefficients $b_1, b_2, \ldots$.
+
+The second functional form in the slide, however, is a truly nonlinear function.
+
+```{r}
+#| results: asis
+practice_question(
+    "Which of the following is **NOT** a linear model?",
+    answer = "Y = b0 * exp(b1 * X1 + b2 * X2)",
+    options = c("Y = X1 + X2",
+                "Y = b0 + b1 * X1 + b2 * X2 + b3 * X1 * X2",
+                "Y = b0 * exp(b1 * X1 + b2 * X2)"),
+    type = "radio"
+)
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What is implied when the model specifies that the variance of $u_{0j}$ is $\\tau^2_0$?",
+    answer = "The intercept variance is constant across different clusters",
+    options = c("The intercept variance is constant across different clusters",
+                "The slope is different across clusters",
+                "The intercept variance is different for different types of schools"),
+    type = "radio"
+)
+```
+
+### Remember the "LINES" 
+
+```{r}
+add_youtube("lh_5-2Cri-4")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What does \"I\" in \"LINES\" stand for?",
+    answer = "Independence of errors",
+    options = c("Increasing trend of outcome",
+                "Independence of errors",
+                "Independence of predictors"),
+    type = "radio")
+```
+
+```{r}
+add_youtube("TXwXrqbK8vE")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What is shown in a marginal model plot?",
+    answer = "Whether the model-implied association is similar to the model-free (i.e., marginal) association",
+    options = c("Whether the model shows a linear association between a predictor and the outcome",
+                "Whether the model-implied association is similar to the model-free (i.e., marginal) association",
+                "Whether the margin of error in the model is small enough"),
+    type = "radio"
+)
+```
+
+```{r}
+add_youtube("2kf5g_WzGhk")
+```
+
+```{r}
+add_youtube("4GKjDRYcWyM")
+```
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+Which assumption(s) are likely violated in the following plot?
+
+```{r practice-assumption, message = FALSE}
+library(tidyverse)
+library(lme4)
+library(broom.mixed)
+set.seed(10)
+u0 <- abs(rnorm(20))
+x <- runif(200)
+e <- rnorm(200, sd = pmin(1 / sqrt(x), 5))
+id <- rep(seq_len(20), each = 10)
+y <- 0.5 + 2 * log(x) + u0[id] + e
+m1 <- lmer(y ~ x + (1 | id))
+augment(m1) %>%
+    mutate(.ols_resid = .fixed - y) %>%
+    ggplot(aes(x = x, y = .ols_resid)) +
+    geom_point() +
+    geom_smooth(se = FALSE)
+```
+
+```{r}
+#| results: asis
+check_question(
+    "linearity and equal variance of errors",
+    options = c("linearity",
+                "equal variance of errors",
+                "normality",
+                "linearity and equal variance of errors"),
+    type = "radio", right = right_ans, wrong = wrong_ans
+)
+```
+
+:::
+
+## Other Model Issues
+
+::: {.callout-note icon=false}
+
+## Outliers/influential observations
+
+- Check coding error
+- Don't drop outliers unless you adjust the standard errors accordingly, or use robust models (see an example in the [R code](/codes/rcode6.qmd#bonus-bayesian-robust-mlm))
+
+:::
+
+::: {.callout-note icon=false}
+
+## Reliability (e.g., $\alpha$ coefficient)
+
+- Reliability may be high at one level but low at another level
+- See Lai (2021, doi: 10.1037/met0000287) for level-specific reliability
+    * You can use the `multilevel_alpha()` function from https://github.com/marklhc/mcfa_reliability_supp/blob/master/multilevel_alpha.R
+    * The procedure was recently implemented in the `semTools::compRelSEM()` function, thanks to Dr. Terrence D. Jorgensen.
+
+:::
+
+## Handling Convergence Issues
+
+```{r}
+add_youtube("9wtTLahkGFE")
+```
+
+See [this section in the R code](/codes/rcode6.qmd#convergence)
+
+## Reporting Results
+
+```{r}
+add_youtube("12tK6d468u0")
+```
+
+:::
