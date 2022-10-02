@@ -1,0 +1,131 @@
+---
+title: "Week 7"
+subtitle: |
+  Sample Size Planning (Guest lecture by Winnie Tse)
+execute:
+  echo: false
+params:
+  slides: "07_samplesize_planning"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Describe the major **assumptions** in basic multilevel models
+- Conduct analyses to decide whether **cluster means** and **random slopes** should be included
+- Use graphical tools to diagnose assumptions of **linearity**, **homoscedasticity** (equal variance), and **normality**
+- Solve some basic **convergence issues**
+- **Report** results of a multilevel analysis based on established guidelines
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Snijders & Bosker ch 10
+    * Meteyard & Davies (2020; to be shared on Slack)
+    * [McCoach (2019 chapter)](https://www-taylorfrancis-com.libproxy2.usc.edu/books/e/9781315755649/chapters/10.4324/9781315755649-22) (USC SSO required)
+3. Attend the Tuesday session to learn some R skills and review last week's exercise
+4. Attend the Thursday session and participate in the class exercise
+4. Complete Homework 5
+
+# Lecture
+
+## Slides
+
+```{r}
+xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html")))
+```
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Sample Size Planning
+
+[Video 1](https://youtu.be/X_4D-G6lRLI)
+
+Test yourself: Quiz on null hypothesis significance testing. (Quiz solution is attached in the end of this webpage.) We will cover the quiz solution in the class. 
+
+< Quiz pdf Here >
+
+
+## Steps for Sample Size Planning
+
+[Video 2](https://youtu.be/Ui7A0SzPQXk)
+
+
+Supplemental reading: 
+
+* Open Science Framework (OSF) provides some [general guidelines](https://help.osf.io/hc/en-us/articles/360021390833-Preregistration) for pre-registrating a study. 
+
+* [Kirley et al. (2020)](https://lirias.kuleuven.be/retrieve/572678) has recently published a template for studies using one type of multilevel design---experience sampling methods, which is a type of intensive longitudinal method that collects participants' self reports of daily thoughts, emotions, and behaviors. 
+
+
+## Precision Analysis
+
+[Video 3](https://youtu.be/E4yiRuAWuCk)
+
+Practice yourself: Find the required $J$ for $SE(\gamma_{10})$ to be $\leq .1$, when the treatment variable is at level-1 (i.e., $X$), with 10 individuals per cluster, ICC = $\tau^2_0 = 0.3$, $\sigma^2$ = 0.7, and $\tau^2_1$ = 0.1.
+
+
+## Power Analysis
+
+[Video 4](https://youtu.be/7nYrIV5nbDs)
+
+Check your learning: In the examples in the video, what would change if the researcher assumes a larger effect under the alternative hypothesis?
+
+* power
+* critical region
+* Type I error rate
+
+### Tools
+
+[Video 5](https://youtu.be/clV_vBac6cM)
+
+### PowerUpR Demo
+
+[Video 6](https://youtu.be/d9dB9m6wptM)
+
+Practice yourself: Using PwerUpR, verify that power = .678 when the treatment variable is at level 1 (i.e., Two-level MS-IRT, random treatment), with an average effect of 0.3 (standardized), no covariate, ICC = 0.3, $\tau^2_1 = 0.15$ (i.e., `omega2` = 0.5 in the program), with 30 clusters and 10 observations per cluster.
+
+Now, include 1 covariate that has an $R^2$ of .40. What is the power?
+
+## Uncertainty in Parameter Values & Hybrid Classical-Bayesian Approach
+
+[Video 7](https://youtu.be/1quPtSGwuDY)
+
+Check your learning: In a pilot study, we found $\delta = .2$, with a standard error of $.05$, and ICC $= .1$, with a standard error of $ = .05$. We use the information $\delta = .2$ and ICC $= .1$ to determine the number of clusters, and the program suggests us to have 116 clusters. If we employ 116 clusters in our study, what will happen to the power?
+
+* Increases
+* Decreases
+* Unchanged
+
+Answer: Decreases
+
+### hcbr Demo
+
+[Video 8](https://youtu.be/wBeANvhvmts)
+
+One advantage of this program is it analytically solves for the number of clusters or cluster size you need. Using `hcbr`, you do not need to iteratively test different $J$ and $n$ until the power achieves 80%; you get the answer directly from the program. 
+
+Practice yourself: Given that $\delta = .2$ with a standard error of $.05$, and ICC $= .1$, with a standard error of $ = .05$. What is the required $J$ if $n = 2$ and $n = 20$? 
+
+### Notes on power analysis
+
+[Video 9](https://youtu.be/n73ZFKKlUQw)
+
+Check your learning: A researcher originally plan to collect data from 30 classrooms with 5 students per classroom, but then found out the study was underpowered. He can collect data from 150 more students. Would it be more beneficial to make it 300 students from 30 classrooms or 300 students from 60 classrooms? Why?
+
+* 300 students from 30 classrooms, because it makes the cluster size larger
+* 300 students from 30 classrooms, because more classrooms increase the noise in the data
+* 300 students from 60 classrooms, because the larger sample size for the classroom level makes tau^2_0 smaller
+* 300 students from 60 classrooms, because the larger sample size for the classroom level gives more power for level-2 coefficients
+
+:::

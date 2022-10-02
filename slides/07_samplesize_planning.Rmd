@@ -1,0 +1,593 @@
+---
+title: "Sample Size Planning for MLM"
+subtitle: "PSYC 575"
+author: "Winnie Tse, Mark Lai"
+institute: "University of Southern California"
+date: "Updated: `r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      ratio: '16:9'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r, child = "slide_settings.RMarkdown"}
+```
+
+$$\newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}$$
+
+```{r load-pkg, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(lme4)
+theme_set(theme_bw())
+```
+
+```{r echo=FALSE}
+get_ab <- function(est, sd){
+  var <- sd^2
+  a <- var
+  b <- est^3 - est^2 + 7*est*var - 3*var
+  c <- - 2*est^3 + est^2 + 16*est^2*var - 14*est*var + 3*var
+  d <- 12*est^3*var - 16*est^2*var + 7*est*var - var
+  
+  alpha <- Re(RConics::cubic(c(a, b, c, d)))
+  beta <- (alpha - 1 - est*alpha + 2*est)/est
+  ab <- cbind(alpha, beta)
+  ab <- ab[ab[, 1] > 1 & ab[, 2] > 1]
+  
+  return(ab)
+}
+```
+
+# Week Learning Objectives
+
+- Describe the importance of having sufficient sample size for scientific research
+
+- Describe conceptually the steps for sample size planning: precision analysis and power analysis
+
+- Perform power analysis for MLM using the PowerUpR application and the `simr` package
+
+- Understand the effect of uncertainty in parameter values and explore alternative approaches for sample size planning
+
+---
+class: inverse, middle, center
+
+# Why Sample Size?
+
+---
+
+# Small Sample Size is a Problem Because . . . 
+
+### Low power
+
+### Misleading and noisy results<sup>1</sup>
+
+- When coupled with publication bias (statistical significance filter)<sup>2 3</sup>
+
+### Nonreproducible findings
+
+.footnote[
+
+[1] See [Maxwell (2004)](10.1037/1082-989X.9.2.147)
+
+[2] See the graph on [this blog post](https://statmodeling.stat.columbia.edu/2014/11/17/power-06-looks-like-get-used/)
+
+[3] See also [Vasishth et al. (2018)](https://doi.org/10.1016/j.jml.2018.07.004)
+
+]
+
+---
+
+# Review: Sampling distributions
+
+### What is the null distribution?
+
+- Suppose we examine the effect of a therapy on eating disorder
+- We test against the null hypothesis $H_0: \gamma_{01} = 0$, where $\gamma_{01}$ is the fixed effect of the therapy on eating disorder
+
+### What is the alternative distribution?
+
+- Assume that the true effect of this therapy is $\gamma_{01} = .1$
+
+---
+
+# Sampling Distribution as a Function of Sample Size
+
+
+Assume true effect is $\gamma_{01} = 0.10$
+
+Let's say 
+
+- when $N = 20$, $p < .05$ when $\hat \gamma \geq `r round(qnorm(.95, sd = 0.5), 2)`$
+- when $N = 200$, $p < .05$ when $\hat \gamma \geq `r round(qnorm(.95, sd = 0.5/ sqrt(10)), 2)`$
+
+.pull-left[
+
+```{r, fig.height=3.5, fig.width=4.5, out.width='80%'}
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "H0"), 
+                fun = dnorm, 
+                args = list(mean = 0, sd = 0.5)) + 
+  stat_function(aes(col = "HA"), 
+                fun = dnorm, 
+                args = list(mean = 0.10, sd = 0.5)) + 
+  geom_vline(xintercept = qnorm(.95, sd = 0.5), 
+             linetype = "dashed", alpha = .6) +
+  labs(x = expression(gamma["01"]), col = "", 
+       title = "N = 20")
+```
+]
+
+.pull-right[
+
+```{r r, fig.height=3.5, fig.width=4.5, out.width='80%'}
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "H0"), 
+                fun = dnorm, 
+                args = list(mean = 0, sd = 0.5 / sqrt(10))) + 
+  stat_function(aes(col = "HA"), 
+                fun = dnorm, 
+                args = list(mean = 0.10, sd = 0.5 / sqrt(10))) + 
+  geom_vline(xintercept = qnorm(.95, sd = 0.5 / sqrt(10)), 
+             linetype = "dashed", alpha = .6) +
+  labs(x = expression(gamma), col = "", 
+       title = "N = 200")
+```
+
+]
+
+
+???
+
+Add the 0 line, the 0.1 line, and the cutoff lines
+
+---
+
+class: inverse, center, middle
+
+# Steps for Sample Size Planning
+
+---
+
+# Steps for Sample Size Planning
+
+1. Write down your model equations
+
+2. List out all parameters in the model 
+
+3. Determine if you want to achieve a desired level of 
+
+a. Power, or
+
+b. Precision
+
+---
+
+# Step 1: Write down model equations
+
+### Group-based therapy for eating disorder (cluster-randomized trial)
+
+---
+
+# Step 1: Write down model equations
+
+### Group-based therapy for eating disorder (cluster-randomized trial)
+
+Level-1
+$$Y_{ij} = \beta_{0j} + \beta_{1j} X\_\text{cmc}_{ij} + e_{ij}$$
+$$e_{ij} \sim N(0, \sigma)$$
+Level-2
+$$
+\begin{aligned}
+  \beta_{0j} & = \gamma_{00} + \gamma_{01} W_j + u_{0j}  \\
+  \beta_{1j} & = \gamma_{10} + \gamma_{11} W_j + u_{1j}  \\
+  \begin{bmatrix}
+    u_{0j} \\
+    u_{1j}
+  \end{bmatrix} & \sim 
+  N\left(
+    \begin{bmatrix}
+      0 \\
+      0
+    \end{bmatrix}, 
+    \begin{bmatrix}
+      \tau^2_0 &  \\
+      \tau_{01} & \tau^2_{1}
+    \end{bmatrix}
+  \right)
+\end{aligned}
+$$
+
+--
+
+- $\gamma_{10}$: $X$ (purely level-1 with ICC = 0)
+- $\gamma_{01}$: $W$ (level-2)
+- $\gamma_{11}$: $W \times X$ (cross-level interaction)
+
+
+---
+
+# Step 2: List out all parameters
+
+.pull-left[
+
+1. Fixed effects: $\gamma_{00}$, $\gamma_{01}$, $\gamma_{10}$, $\gamma_{11}$
+
+2. Random effects: $\tau^2_{0}$, $\tau^2_{1}$, $\tau_{01}$
+
+3. Number of clusters: $J$
+
+4. Cluster size: $n$
+
+]
+
+.pull-right[
+
+Level-1
+$$Y_{ij} = \beta_{0j} + \beta_{1j} X\_\text{cmc}_{ij} + e_{ij}$$
+$$e_{ij} \sim N(0, \sigma)$$
+Level-2
+$$
+\begin{aligned}
+  \beta_{0j} & = \gamma_{00} + \gamma_{01} W_j + u_{0j}  \\
+  \beta_{1j} & = \gamma_{10} + \gamma_{11} W_j + u_{1j}  \\
+  \begin{bmatrix}
+    u_{0j} \\
+    u_{1j}
+  \end{bmatrix} & \sim 
+  N\left(
+    \begin{bmatrix}
+      0 \\
+      0
+    \end{bmatrix}, 
+    \begin{bmatrix}
+      \tau^2_0 &  \\
+      \tau_{01} & \tau^2_{1}
+    \end{bmatrix}
+  \right)
+\end{aligned}
+$$
+
+]
+
+---
+
+class: inverse, center, middle
+
+# Standard Error and Precision Analysis
+
+---
+
+# Sample Size and *SE*/Post. *SD*
+
+In the previous graph, when $N = 20$, the sample estimate is likely to be anywhere between -0.4 and 0.6
+
+$$SE \propto \frac{1}{\sqrt{N}}$$
+
+--
+
+One goal of sample size planning is to 
+
+> Have sufficient sample size to get precise (low *SE*) sample estimates of an effect
+
+---
+
+# Analytic Formulas of *SE*
+
+$J$ = Number of clusters; $n$ = Cluster size
+
+- E.g., $J = 100$ schools; $n = 10$ students per school
+
+Assuming $\tau_{01} = 0$
+
+\begin{aligned}
+    \mathit{SE}(\gamma_{01}) & = \sqrt{\frac{1}{S^2_W}\left(\frac{\tau^2_0}{J} + \frac{\sigma^2}{Jn}\right)}  \\
+    \mathit{SE}(\gamma_{10}) & = \sqrt{\frac{\tau^2_1}{J} + \frac{\sigma^2}{JnS^2_X}}  \\
+    \mathit{SE}(\gamma_{11}) & = \sqrt{\frac{1}{S^2_W}\left(\frac{\tau^2_1}{J} + \frac{\sigma^2}{JnS^2_X}\right)}  \\
+\end{aligned}
+
+---
+
+# Precision Analysis
+
+Group-based therapy for eating disorder (cluster-randomized trial)
+
+- Intervention at group level 
+
+- 10 participants per group
+
+- Outcome standardized (i.e., *SD* = $\sqrt{\tau^2_0 + \sigma^2} = 1$)
+    * $\gamma$ = Cohen's $d$
+
+- ICC = .3 (i.e., $\tau^2_0 = .3$)
+
+--
+
+- Goal: estimate $J$ such that $\mathit{SE}(\gamma_{10}) \leq .1$
+    * E.g., if we estimated the sample effect size to be $d = .25$, the 95% CI would be approximately [.05, .45]. 
+
+---
+
+# Calculating $J$
+
+When the predictor is binary (e.g., treatment-control), if half of the groups is in one condition, $S^2_W = 0.25$
+
+- Otherwise, if 30% in one condition, $S^2_W = 0.3 \times 0.7$
+- $\tau^2_0 = 0.3$, $\sigma^2 = 0.7$, $n = 10$
+
+```{r, include=FALSE}
+segam <- function(j, n = 10) {
+  sqrt(((0.3 / j) + 0.7 / j / n) * 4)
+}
+```
+
+
+E.g., if $J = 30$
+$$\mathit{SE}(\gamma_{01}) = \sqrt{\frac{1}{S^2_W}\left(\frac{\tau^2_0}{J} + \frac{\sigma^2}{Jn}\right)} = \sqrt{\frac{1}{0.25}\left(\frac{0.3}{30} + \frac{0.7}{(30)(10)}\right)} = `r segam(30)`$$
+
+--
+
+Keep trying, and you'll find ...
+
+When $J$ = 148, $\mathit{SE}(\gamma_{01}) = `r segam(148)`$
+
+So you'll need 148 groups (74 treatment, 74 control)
+
+---
+
+class: inverse, middle, center
+
+# Power Analysis
+
+---
+
+.pull-left[
+
+Two-tailed test, $\alpha = .05$
+
+$H_0: \gamma_{01} = 0$
+
+```{r, fig.height=4, fig.width=5.5}
+num_clus <- 30
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "J = 30"), 
+                fun = function(x) {
+                  dt(x / segam(num_clus), df = num_clus - 2)
+                }) + 
+  geom_vline(xintercept = qt(c(.025, .975), df = num_clus - 2) * 
+               segam(num_clus)) + 
+  labs(x = expression(gamma), col = "")
+```
+
+Critical region: $\hat \gamma_{01} \leq `r round(qt(.025, df = num_clus - 2) * segam(num_clus), 2)`$ or $\hat \gamma_{01} \geq `r round(qt(.975, df = num_clus - 2) * segam(num_clus), 2)`$
+
+]
+
+--
+
+.pull-right[
+
+$H_1: \gamma_{01} = 0.3$
+
+```{r, fig.height=4, fig.width=5.5}
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "J = 30"), 
+                fun = function(x) {
+                  dt((x - 0.3) / segam(num_clus), df = num_clus - 2)
+                }) + 
+  geom_vline(xintercept = qt(c(.025, .975), df = num_clus - 2) * 
+               segam(num_clus)) + 
+  labs(x = expression(gamma), col = "")
+```
+
+Power<sup>1</sup> $\approx P(\hat \gamma_{01} \leq `r round(qt(.025, df = num_clus - 2) * segam(num_clus), 2)`) + P(\hat \gamma_{01} \geq `r round(qt(.975, df = num_clus - 2) * segam(num_clus), 2)`) = `r pt(qt(.025, df = num_clus - 2) - 0.3 / segam(num_clus), df = num_clus - 2) + 1 - pt(qt(.975, df = num_clus - 2) - 0.3 / segam(num_clus), df = num_clus - 2)`$
+
+.footnote[
+
+[1] In practice, we need to incorporate the sampling variability of the standard error as well, so this power calculation is only a rough approximation. 
+
+]
+
+]
+
+---
+
+.pull-left[
+
+Two-tailed test, $\alpha = .05$
+
+$H_0: \gamma_{01} = 0$
+
+```{r, fig.height=4, fig.width=5.5}
+num_clus <- 148
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "J = 148"), 
+                fun = function(x) {
+                  dt(x / segam(num_clus), df = num_clus - 2)
+                }) + 
+  geom_vline(xintercept = qt(c(.025, .975), df = num_clus - 2) * 
+               segam(num_clus)) + 
+  labs(x = expression(gamma), col = "")
+```
+
+Critical region: $\hat \gamma_{01} \leq `r round(qt(.025, df = num_clus - 2) * segam(num_clus), 2)`$ or $\hat \gamma_{01} \geq `r round(qt(.975, df = num_clus - 2) * segam(num_clus), 2)`$
+
+]
+
+--
+
+.pull-right[
+
+$H_1: \gamma_{01} = 0.3$
+
+```{r, fig.height=4, fig.width=5.5}
+ggplot(tibble(gamma = c(-1, 1)), 
+       aes(x = gamma)) + 
+  stat_function(aes(col = "J = 148"), 
+                fun = function(x) {
+                  dt((x - 0.3) / segam(num_clus), df = num_clus - 2)
+                }) + 
+  geom_vline(xintercept = qt(c(.025, .975), df = num_clus - 2) * 
+               segam(num_clus)) + 
+  labs(x = expression(gamma), col = "")
+```
+
+Power $\approx P(\hat \gamma_{01} \leq `r round(qt(.025, df = num_clus - 2) * segam(num_clus), 2)`) + P(\hat \gamma_{01} \geq `r round(qt(.975, df = num_clus - 2) * segam(num_clus), 2)`) = `r pt(qt(.025, df = num_clus - 2) - 0.3 / segam(num_clus), df = num_clus - 2) + 1 - pt(qt(.975, df = num_clus - 2) - 0.3 / segam(num_clus), df = num_clus - 2)`$
+
+]
+
+---
+
+# Tools for Power Analysis
+
+1. Stand-alone programs
+
+    * [Optimal Design](http://www.hlmsoft.net/od/)
+    * [PinT](https://www.stats.ox.ac.uk/~snijders/multilevel.htm#progPINT)
+
+2. R packages
+
+    * `simr`
+
+3. Spreadsheet/Webapp
+
+    * [PowerUp!](https://www.causalevaluation.org/power-analysis.html)
+
+See more discussion in [Arend & Schäfer (2019)](https://doi.org/10.1037/met0000195)
+
+---
+
+class: middle, center
+
+# PowerUpR Shiny App
+
+https://powerupr.shinyapps.io/index/
+
+---
+
+# Monte Carlo Simulation for Power Analysis
+
+- Simulate a large number (e.g., $R$ = 1,000) of data sets based on given effect size, ICC, etc
+
+- Fit an MLM to each simulated data
+
+- Power $\approx$ Proportion of times $p < \alpha$
+
+### See sample R code for using `simr`
+
+---
+
+class: inverse, middle, center
+
+# Uncertainty in Parameter Values
+
+---
+
+# Uncertainty in Parameter Values
+
+In the PowerUpR demo, to calculate the number of clusters $J$ need to achieve 80% power, we determined 
+
+1. Type I error rate = .05
+2. Two tailed test = TRUE
+3. `g2`, `r21`, `r22` = 0, as we did not include any covariates
+4. `p` = .5, for a balanced design (half treatment, half control)
+
+However, we need to guess the values of 
+
+1. Effect size = .3?
+2. ICC = .3?
+
+---
+
+# The Effect of Uncertainty in Power
+
+.pull-left[
+
+### Ignoring uncertainty
+
+- The more uncertainty we have but ignore about a parameter value, the more power loss we will have in our study (red curve)
+
+- Uncertainty in both effect size and ICC can further reduce our power
+
+- The more uncertainty we have, the more samples we need to achieve 80% power
+
+
+]
+
+.pull-right[
+
+<img src="img/ep.png" width="80%" style="position: relative; top: -40px;">
+
+]
+
+---
+
+# Hybrid Classical-Bayesian approach
+
+- Incorporates uncertainty for sample size planning
+
+- Instead of plugging in a point value of a guess, we can specify how much uncertainty we have (e.g., standard error of $\gamma_{01}$ from a previous study)
+
+$$\delta \sim N(.3, .1) \quad \rho \sim \text{Beta}(a, b)$$
+     
+     
+- where $a$, $b$ can be calculated by $\hat{\rho} = .3$ and $\sigma_{\rho} = .1$ (estimate and uncertainty about $\rho$)
+
+
+.pull-center[
+
+```{r fig.height=3.5, out.height="60%", fig.align='center'}
+d_est = .3
+d_sd = .1
+pd <- ggplot(data.frame(x = c(d_est - 3*d_sd, d_est + 3*d_sd)),
+             aes(x = x)) +
+  stat_function(fun = dnorm, n = 101,
+                args = list(mean = d_est, sd = d_sd)) +
+  labs(x = expression(delta), y = "Density") 
+rho_ab <- get_ab(.3, .1)
+prho <- ggplot(data.frame(x = c(qbeta(.01, rho_ab[1], rho_ab[2]),
+                                qbeta(.99, rho_ab[1], rho_ab[2]))),
+               aes(x = x)) +
+  stat_function(fun = dbeta, n = 101,
+                args = list(shape1 = rho_ab[1], shape2 = rho_ab[2])) +
+  labs(x = expression(rho), y = "Density")
+gridExtra::grid.arrange(pd, prho, nrow = 1)
+```
+
+]
+
+---
+
+class: middle, center
+
+# hcbr Shiny App
+
+
+http://winnie-wy-tse.shinyapps.io/hcb_shiny
+
+---
+
+# Additional Notes on Power
+
+- Increasing $J$ usually leads to higher power than increasing $n$
+
+- Balanced designs generally have higher power than unbalanced designs
+
+- Larger sample size required for testing level-2 predictors
+
+- Testing an interaction requires a much larger sample size
+
+    * E.g., 16 times larger than for a main effect
+
+???
+
+Doubling $J$ is better than doubling $n$
+
