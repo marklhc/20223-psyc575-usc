@@ -18,22 +18,20 @@ source("../render_slides.R", local = TRUE)
 
 By the end of this module, you will be able to 
 
-- Describe the major **assumptions** in basic multilevel models
-- Conduct analyses to decide whether **cluster means** and **random slopes** should be included
-- Use graphical tools to diagnose assumptions of **linearity**, **homoscedasticity** (equal variance), and **normality**
-- Solve some basic **convergence issues**
-- **Report** results of a multilevel analysis based on established guidelines
+- Describe the importance of having sufficient sample size for scientific research
+- Describe conceptually the steps for sample size planning: **precision analysis** and **power analysis**
+- Perform power analysis for MLM using the PowerUpR application and the `simr` package
+- Understand the effect of **uncertainty** in parameter values and explore alternative approaches for sample size planning
 
 ## Task Lists
 
 1. Review the resources (lecture videos and slides)
 2. Complete the assigned readings
-    * Snijders & Bosker ch 10
-    * Meteyard & Davies (2020; to be shared on Slack)
-    * [McCoach (2019 chapter)](https://www-taylorfrancis-com.libproxy2.usc.edu/books/e/9781315755649/chapters/10.4324/9781315755649-22) (USC SSO required)
-3. Attend the Tuesday session to learn some R skills and review last week's exercise
+    * Snijders & Bosker ch 11
+3. Attend the optional Tuesday session to learn about simulation in R
 4. Attend the Thursday session and participate in the class exercise
-4. Complete Homework 5
+4. Complete Homework 6
+5. Think about your project---Prospectus will be due in two weeks
 
 # Lecture
 
