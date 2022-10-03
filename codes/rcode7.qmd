@@ -1,0 +1,39 @@
+---
+title: "Week 7 (R): Power"
+execute:
+  echo: false
+format:
+  html:
+    code-tools:
+      source: week7-samplesize-planning.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week7-samplesize-planning"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+```
+
+:::{.callout-important}
+
+There have been some updates to the R code since the videos were recorded. The major changes are:
+
+1. The code now uses the packaged `simr::powerCurve()` function, instead of the functions I previously made, to obtain power estimates across different levels of sample sizes
+
+2. For some of the examples, I started with a bigger number of clusters and cluster size, which may give more stable results for continuous predictors.
+
+:::
+
+```{r}
+add_youtube("mexjG8JYH0o")
+```
+
+```{r}
+add_youtube("8-CfslHFD2c")
+```
+
+
+{{< include _rcode-common.qmd >}}

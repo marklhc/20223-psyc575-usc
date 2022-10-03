@@ -6,27 +6,24 @@ output:
     toc: true
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">#")
 ```
 
 ## Load Packages
 
-```{r load-pkg, message=FALSE}
+```{r load-pkg, message = FALSE}
 # To install a package, run the following ONCE (and only once on your computer)
 # install.packages("simr")  
 library(tidyverse)
 library(lme4)
 library(simr)
-library(MuMIn)
-theme_set(theme_bw())  # Theme; just my personal preference
+library(MuMIn)  # you can use `performance::r2()` as an alternative
 ```
 
 See also an example from the vignette of the `simr` package: https://cran.r-project.org/web/packages/simr/vignettes/fromscratch.html
 
-Note: In the examples of this note I used 100 simulation samples only to save
-time. In practice, you should use at least 1,000 to obtain a reasonable 
-precision on the power estimation. 
+<span style="color:red">Note: In the examples of this note I used 100 simulation samples only to save time. In practice, you should use at least 1,000 to obtain a reasonable precision on the power estimation.</span>
 
 ## Binary Predictor at Level 2
 
@@ -47,14 +44,14 @@ num_clus <- 10
 id <- 1:num_clus
 # Binary lv-2 predictor
 treat <- factor(c("c", "t"))
-# Level-2 data
+# Level-2 data (note: `tibble` is the tidyverse version of `data.frame`)
 lv2_dat <- tibble(id, treat = rep_len(treat, length.out = num_clus))
 # Cluster size
 clus_size <- 5
 # Expand each cluster to include more rows
-(sim_dat <- 
-    lv2_dat %>% 
-    slice(rep(1:n(), each = clus_size)))
+(sim_dat <- lv2_dat %>%
+    # seq_len(n()) creates a range from 1 to number of rows
+    slice(rep(seq_len(n()), each = clus_size)))
 ```
 
 Then specify the fixed effect coefficients and the random effect variance:
@@ -68,22 +65,22 @@ sigma <- 1  # sigma, usually fixed to be 1.0 for easier scaling
 Use `simr::makeLmer()` to build an artificial `lmer` object:
 
 ```{r sim_m1}
-sim_m1 <- makeLmer(y ~ treat + (1 | id), 
-                   fixef = gams, VarCorr = taus, sigma = sigma, 
+sim_m1 <- makeLmer(y ~ treat + (1 | id),
+                   fixef = gams, VarCorr = taus, sigma = sigma,
                    data = sim_dat)
 # Check R^2
 r.squaredGLMM(sim_m1)
 # Cohen's d
-gams[2] / sqrt(taus + sigma^2)
+gams[2] / sqrt(taus + sigma^2)  # treatment effect / sqrt(tau_0^2 + sigma^2)
 ```
 
 ### Obtain simulation-based power
 
 Now, check the power:
 
-```{r power_m1, message=FALSE}
-power_m1 <- powerSim(sim_m1, 
-                     # number of simulated samples; use a small number for 
+```{r power_m1, message = FALSE}
+power_m1 <- powerSim(sim_m1,
+                     # number of simulated samples; use a small number for
                      # trial run
                      nsim = 20,
                      progress = FALSE)  # suppress the progress bar
@@ -96,79 +93,41 @@ Power was obviously not sufficient as it is far from 80%, so we'll increase it.
 
 Increase to 50 clusters
 
-```{r sim_m1_50J, message=FALSE, cache=TRUE}
-sim_m1_50J <- extend(sim_m1, 
+(Note that I set the `cache = TRUE` option so that I can reuse the results next time.)
+
+```{r sim_m1_50J, message = FALSE, cache = TRUE}
+sim_m1_50J <- extend(sim_m1,
                      along = "id",  # add more levels of `id` (i.e., clusters)
                      n = 50)  # increase to 50 clusters
 power_m1_50J <- powerSim(sim_m1_50J, nsim = 20, progress = FALSE)
 power_m1_50J
 ```
 
-This looks close to 80%. Let's try several numbers of clusters (30, 35, 40, 45, 50) with a larger `nsim`. To my knowledge `simr` does not directly handle multiple values for number of clusters, so I provided you a handy `power_extend()` function, and an associated function for plotting the results.  
+This looks close to 80%. Let's try several numbers of clusters (10, 20, 30, 40, 50) with a larger `nsim`. You can use the `simr::powerCurve()` function.
 
-```{r power_extend}
-# Wrap to a function
-power_extend <- function(fit, along, within, new_size, time_points, ...) {
-  if (!missing(time_points)) {
-    power_lst <- vector("list", length(time_points))
-    for (j in seq_along(time_points)) {
-      sim_m <- extend(fit, along = along, within = within, 
-                      values = (1:time_points[j]) - 1)
-      power_lst[[j]] <- powerSim(sim_m, ...)
-    }
-    setNames(power_lst, time_points)
-  } else {
-    power_lst <- vector("list", length(new_size))
-    for (j in seq_along(new_size)) {
-      sim_m <- extend(fit, along = along, within = within, n = new_size[j])
-      power_lst[[j]] <- powerSim(sim_m, ...)
-    }
-    setNames(power_lst, new_size)
-  }
-}
-# Compute proportions and CI
-powerinterval <- function(object, alpha = object$alpha, level = 0.95, 
-                          method = getSimrOption("binom"), ...) {
-    x <- sum(object$pval < alpha, na.rm = TRUE)
-    n <- object$n
-    if (is.na(x) || is.na(n) || (n == 0)) {
-        return(rep(NA, 3))
-    }
-    binom::binom.confint(x, n, level, method, ...)[c("mean", "lower", "upper")]
-}
-# Add a plotting function to get power curve
-plot_power_extend <- function(object, target = .80, ...) {
-  nsim <- object[[1]]$n
-  df <- purrr::map_dfr(object, powerinterval, .id = "n", ...)
-  df$n <- as.integer(df$n)
-  ggplot(df, aes(x = n, y = mean, group = 1)) + 
-    geom_hline(yintercept = target) + 
-    geom_smooth(method = "glm", 
-                formula = cbind(y * nsim, (1 - y) * nsim) ~ x, 
-                method.args = list(family = binomial("probit"))) + 
-    geom_pointrange(aes(ymin = lower, ymax = upper)) + 
-    labs(y = "power") + 
-    ylim(0, 1)
-}
+<!-- To my knowledge `simr` does not directly handle multiple values for number of clusters, so I provided you a handy `power_extend()` function, and an associated function for plotting the results.   -->
+
+```{r powers_m1, cache = TRUE, message = FALSE}
+# The first argument needs to be the output from running `extend`
+powers_m1 <- powerCurve(
+    sim_m1_50J,
+    along = "id",
+    breaks = c(10, 20, 30, 40, 50),
+    nsim = 100,
+    progress = FALSE  # suppress progress bar (for printing purpose)
+)
+powers_m1  # summary; check the numbers of rows are correct
+plot(powers_m1)
 ```
 
-```{r powers_m1, cache=TRUE, message=FALSE}
-powers_m1 <- power_extend(sim_m1, along = "id", 
-                          new_size = seq.int(30, to = 50, by = 5), 
-                          nsim = 100)
-# Plot
-plot_power_extend(powers_m1)
-```
-
-This suggests that about 40 clusters are needed, if each cluster contains 5 observations. 
+This suggests that ~ 50 clusters are needed, if each cluster contains 5 observations. 
 
 #### Increasing cluster size
 
-Instead of increasing the number of cluster, one can also increase the cluster
-size:
+Instead of increasing the number of cluster, one can also increase the cluster size (with $J$ = 50):
 
-```{r power_m1_25n, message=FALSE, cache=TRUE}
-sim_m1_25n <- extend(sim_m1, 
+```{r power_m1_25n, message = FALSE, cache = TRUE}
+sim_m1_25n <- extend(sim_m1,
                      # need to specify the combination of id and lv-2 predictors
                      within = "id + treat",
                      n = 25)  # cluster size
@@ -176,18 +135,57 @@ power_m1_25n <- powerSim(sim_m1_25n, nsim = 100, progress = FALSE)
 power_m1_25n
 ```
 
-Note that the power of increasing cluster size by 5 times is much smaller than
-that of increasing number of clusters by 5 times. Here is the power curve:
+Note that the power of increasing cluster size by 5 times is much smaller than that of increasing number of clusters by 5 times. Here is the power curve:
 
-```{r powers_m1-2, cache=TRUE, message=FALSE}
-# Use the previously defined function
-powers_m1 <- power_extend(sim_m1, within = "id + treat", 
-                          new_size = c(5, 10, 25, 50), 
-                          nsim = 100)
-plot_power_extend(powers_m1)
+```{r powers_m1-2, cache = TRUE, message = FALSE}
+powers_m1_n <- powerCurve(
+    sim_m1_25n,
+    within = "id + treat",
+    breaks = c(5, 10, 15, 20, 25),
+    nsim = 100,
+    progress = FALSE
+)
+powers_m1_n
+plot(powers_m1_n)
 ```
 
 In this case, increasing the cluster size only increases the power to close to 50%. There is an upper limit in power improvement with increasing the cluster size, when the number of cluster is kept constant. 
+
+#### Changing effect size
+
+Finally, we can also explore how effect size affects power
+
+```{r}
+# Change gamma_01
+gams <- c(0, 0.9)  # gamma_00, gamma_01
+taus <- matrix(0.25)  # conditional ICC = 0.25 / (1 + 0.25) = 0.2
+sigma <- 1  # sigma, usually fixed to be 1.0 for easier scaling
+# Use `makeLmer()` again
+sim_m1_large_es <- makeLmer(y ~ treat + (1 | id),
+                            fixef = gams, VarCorr = taus, sigma = sigma,
+                            data = sim_dat)
+# Check R^2
+r.squaredGLMM(sim_m1_large_es)
+# Cohen's d
+gams[2] / sqrt(taus + sigma^2)  # treatment effect / sqrt(tau_0^2 + sigma^2)
+```
+
+Let's also look at varying number of clusters
+
+```{r, message = FALSE, cache = TRUE}
+sim_m1_large_es_40J <- extend(sim_m1_large_es, along = "id", n = 40)
+power_m1_large_es <- powerCurve(
+    sim_m1_large_es_40J, along = "id", breaks = c(10, 20, 30, 40),
+    nsim = 100, progress = FALSE
+)
+power_m1_large_es
+plot(power_m1_large_es)
+```
+
+So, to summarize power for the different scenarios, if we want 80% power, we need
+
+- Treatment effect = 0.625, ~ 50 clusters
+- Treatment effect = 0.90, ~ 25 clusters
 
 ## Continuous Predictor at Level 2
 
@@ -200,24 +198,26 @@ $$
 
 ### Preparing Simulated Data
 
+In the previous section, we started with a small simulated data. When we have continuous predictor(s), it is usually best to start with a larger number of clusters.
+
 First, generate the predictor matrix and the cluster ID
 
 ```{r sim_dat-m2}
-# Cluster ID (start with 10 clusters)
-num_clus <- 10
+# Cluster ID (use 100 clusters)
+num_clus <- 100
 id <- 1:num_clus
-# Binary lv-2 predictor
+# Continuous lv-2 predictor
 w <- rnorm(num_clus)
-# Force SD = 1
+# Convert to z score so that SD = 1
 w <- (w - mean(w)) / sd(w) * (num_clus - 1) / num_clus
 # Level-2 data
 lv2_dat <- tibble(id, w = w)
 # Cluster size
-clus_size <- 5
+clus_size <- 25
 # Expand each cluster to include more rows
-(sim_dat <- 
-    lv2_dat %>% 
-    slice(rep(1:n(), each = clus_size)))
+(sim_dat <- lv2_dat %>%
+    # seq_len(n()) creates a range from 1 to number of rows
+    slice(rep(seq_len(n()), each = clus_size)))
 ```
 
 Then specify the fixed effect coefficients and the random effect variance:
@@ -231,8 +231,8 @@ sigma <- 1  # sigma, usually fixed to be 1.0 for easier scaling
 Use `simr::makeLmer()` to build an artificial `lmer` object:
 
 ```{r sim_m2}
-sim_m2 <- makeLmer(y ~ w + (1 | id), 
-                   fixef = gams, VarCorr = taus, sigma = sigma, 
+sim_m2 <- makeLmer(y ~ w + (1 | id),
+                   fixef = gams, VarCorr = taus, sigma = sigma,
                    data = sim_dat)
 # Check R^2
 r.squaredGLMM(sim_m2)
@@ -242,23 +242,24 @@ r.squaredGLMM(sim_m2)
 
 Use various numbers of clusters
 
-```{r powers_m2, cache=TRUE, message=FALSE}
-# Use it on our example:
-powers_m2 <- power_extend(sim_m2, along = "id", 
-                          new_size = c(10, 20, 50, 100), 
-                          nsim = 100)
-plot_power_extend(powers_m2)
+```{r powers_m2, cache = TRUE, message = FALSE}
+powers_m2 <- powerCurve(
+    sim_m2, along = "id", breaks = c(10, 20, 50, 100),
+    nsim = 100, progress = FALSE
+)
+powers_m2
+plot(powers_m2)
 ```
 
-Use various cluster sizes
+Use various cluster sizes (negligible change in power)
 
-```{r powers_m2-2, cache=TRUE, message=FALSE}
-# Use it on our example:
-powers_m2 <- power_extend(sim_m2, 
-                          within = "id + w", 
-                          new_size = c(5, 10, 25, 50), 
-                          nsim = 100)
-plot_power_extend(powers_m2)
+```{r powers_m2-2, cache = TRUE, message = FALSE}
+powers_m2_n <- powerCurve(
+    sim_m2, within = "id + w", breaks = c(5, 10, 25, 50),
+    nsim = 100, progress = FALSE
+)
+powers_m2_n
+plot(powers_m2_n)
 ```
 
 ## Binary Predictor at Level 2 With a Continuous Level-1 Covariate (and Random Slope)
@@ -267,19 +268,22 @@ Cluster-mean centering needs to be considerd
 
 $$
   \begin{aligned}
-    Y_{ij} & = \beta_{0j} + \beta_{1j} X\text{_cmc}_{ij} + e_{ij} \\
-    \beta_{0j} & = \gamma_{00} + \gamma_{01} W_j + \gamma_{02} X\text{_cm}_{j} + u_{0j} \\
+    Y_{ij} & = \beta_{0j} + \beta_{1j} X\text{\_cmc}_{ij} + e_{ij} \\
+    \beta_{0j} & = \gamma_{00} + \gamma_{01} W_j + \gamma_{02} X\text{\_cm}_{j} + u_{0j} \\
     \beta_{1j} & = \gamma_{10} + {\color{red}{\gamma_{11}}} W_j + u_{1j}
   \end{aligned}
-$$  
+$$
+
+We consider a covariate with ICC = .2
 
 ### Preparing Simulated Data
 
-First, generate the predictor matrix and the cluster ID
+First, generate the simulated data. I use a large $J$ and a moderate $n$ here.
 
 ```{r sim_dat-m4}
+# Step 1: Lv-2 data (basically the same as before)
 # Cluster ID (start with 10 clusters)
-num_clus <- 10
+num_clus <- 100
 id <- 1:num_clus
 # Binary lv-2 predictor
 treat <- factor(c("c", "t"))
@@ -288,28 +292,29 @@ x_cm <- rnorm(num_clus, mean = 0, sd = sqrt(0.2))
 # Force SD = sqrt(0.2)
 x_cm <- (x_cm - mean(x_cm)) / sd(x_cm) * sqrt(0.2) * (num_clus - 1) / num_clus
 # Level-2 data
-lv2_dat <- tibble(id, treat = rep_len(treat, length.out = num_clus), 
-                  x_cm)
+lv2_dat <- tibble(id, treat = rep_len(treat, length.out = num_clus), x_cm)
 # Expand each cluster to include more rows
-clus_size <- 20  # Cluster size
-lv2_dat <- lv2_dat %>% 
-    slice(rep(1:n(), each = clus_size))
+clus_size <- 40  # Cluster size
+sim_dat <- lv2_dat %>%
+    slice(rep(seq_len(n()), each = clus_size))
+
+# Step 2: Add level-1 covariate
 # Within-cluster component of X, with sigma^2(X) = 0.8
 num_obs <- num_clus * clus_size
 x_cmc <- rnorm(num_obs, mean = 0, sd = 1)
 x_cmc <- x_cmc - ave(x_cmc, lv2_dat$id, FUN = mean)
 # Force SD = sqrt(0.8)
 x_cmc <- x_cmc / sd(x_cmc) * sqrt(0.8) * (num_obs - 1) / num_obs
-# Expand each cluster to include more rows
-(sim_dat <- mutate(lv2_dat, x_cmc = x_cmc))
+# Add `x_cmc` to `sim_dat`
+sim_dat$x_cmc <- x_cmc
 ```
 
 Then specify the fixed effect coefficients and the random effect variance:
 
 ```{r m4-params}
 # gamma_00, gamma_01, gamma_02, gamma_10, gamma_11
-gams <- c(0, 0.3, 0.2, 0.1, 0.2)  
-taus <- matrix(c(0.25, 0, 
+gams <- c(0, 0.3, 0.2, 0.1, 0.2)
+taus <- matrix(c(0.25, 0,
                  0, 0.10), nrow = 2)  # tau^2_0 = 0.25, tau^2_1 = 0.1
 sigma <- sqrt(.96)  # sigma
 ```
@@ -317,17 +322,17 @@ sigma <- sqrt(.96)  # sigma
 Use `simr::makeLmer()` to build an artificial `lmer` object:
 
 ```{r sim_m4}
-sim_m4 <- makeLmer(y ~ treat + x_cm + x_cmc + treat:x_cmc + (x_cmc | id), 
-                   fixef = gams, VarCorr = taus, sigma = sigma, 
+sim_m4 <- makeLmer(y ~ treat + x_cm + x_cmc + treat:x_cmc + (x_cmc | id),
+                   fixef = gams, VarCorr = taus, sigma = sigma,
                    data = sim_dat)
 # Check R^2
 r.squaredGLMM(sim_m4)
 # Compare to a model without the cross-level interaction
-sim_m4n <- makeLmer(y ~ treat + x_cm + x_cmc + (x_cmc | id), 
-                    fixef = gams[1:4], VarCorr = taus, sigma = sigma, 
-                    data = sim_dat)
+sim_m4null <- makeLmer(y ~ treat + x_cm + x_cmc + (x_cmc | id),
+                       fixef = gams[1:4], VarCorr = taus, sigma = sigma,
+                       data = sim_dat)
 # Check R^2
-r.squaredGLMM(sim_m4n)
+r.squaredGLMM(sim_m4null)
 # So the cross-level interaction corresponds to an R^2 change of about 2.5%
 ```
 
@@ -335,34 +340,37 @@ r.squaredGLMM(sim_m4n)
 
 Use various numbers of clusters
 
-Note: by default the first term in the fixed effect (other than the intercept)
-will be tested. We'll specify the interaction instead.
+(Note: by default the first term in the fixed effect [other than the intercept] will be tested. We'll specify the interaction instead.)
 
-```{r powers_m4, cache=TRUE, message=FALSE}
-# Use it on our example:
-powers_m4 <- power_extend(sim_m4, 
-                          along = "id", 
-                          new_size = c(10, 20, 50, 100), 
-                          nsim = 100, 
-                          test = fixed("treat:x_cmc", 
-                                       method = "anova"))
-plot_power_extend(powers_m4)
+```{r powers_m4, cache = TRUE, message = FALSE}
+powers_m4 <- powerCurve(
+    sim_m4, along = "id", breaks = c(10, 20, 50, 100),
+    # `method = "anova"` means power for LRT
+    test = fixed("treat:x_cmc", method = "anova"),
+    nsim = 100, progress = FALSE
+)
+powers_m4
+plot(powers_m4)
 ```
 
 Use various cluster sizes (results not shown)
 
-```{r powers_m4-2, eval=FALSE}
-# Use it on our example:
-powers_m4 <- power_extend(sim_m4, 
-                          within = "id + treat + x_cm",
-                          new_size = c(40, 80, 200), 
-                          nsim = 100, 
-                          test = fixed("treat:x_cmc", 
-                                       method = "anova"))
-plot_power_extend(powers_m4)
+```{r powers_m4-2, eval = FALSE}
+# Increase to n = 200
+sim_m4_200n <- extend(sim_m4, within = "id + treat + x_cm", n = 200)
+# Decrease to J = 50
+sim_m4_200n <- extend(sim_m4_200n, along = "id", n = 50)
+powers_m4_n <- powerCurve(
+    sim_m4_200n, within = "id + treat + x_cm", breaks = c(40, 80, 200),
+    # `method = "anova"` means power for LRT
+    test = fixed("treat:x_cmc", method = "anova"),
+    nsim = 100, progress = FALSE
+)
+powers_m4_n
+plot(powers_m4_n)
 ```
 
-## Growth Modeling
+## Bonus: Growth Modeling
 
 With a binary person-level predictor
 
@@ -379,8 +387,8 @@ $$
 First, generate the predictor matrix and the cluster ID
 
 ```{r sim_dat-m5}
-# Person ID (start with 10 clusters)
-num_clus <- 10
+# Person ID (start with 50 clusters)
+num_clus <- 50
 id <- 1:num_clus
 # Binary lv-2 predictor
 treat <- factor(c("c", "t"))
@@ -389,7 +397,7 @@ lv2_dat <- tibble(id, treat = rep_len(treat, length.out = num_clus))
 # Expand each cluster to include more rows
 clus_size <- 4  # Number of time points
 # Within-cluster component of X, with sigma^2(X) = 0.8
-time <- 0:(clus_size - 1)
+time <- 1:clus_size
 # Expand each cluster to include more rows
 (sim_dat <- expand_grid(lv2_dat, time))
 ```
@@ -398,8 +406,8 @@ Then specify the fixed effect coefficients and the random effect variance:
 
 ```{r m5-params}
 # gamma_00, gamma_01, gamma_10, gamma_11
-gams <- c(1, 0.5, -0.2, 0.3)  
-taus <- matrix(c(0.5, 0, 
+gams <- c(1, 0, -0.2, 0.3)
+taus <- matrix(c(0.5, 0,
                  0, 0.10), nrow = 2)  # tau^2_0 = 0.5, tau^2_1 = 0.1
 sigma <- sqrt(1)  # sigma
 ```
@@ -407,69 +415,61 @@ sigma <- sqrt(1)  # sigma
 Use `simr::makeLmer()` to build an artificial `lmer` object:
 
 ```{r sim_m5}
-sim_m5 <- makeLmer(y ~ treat + time + treat:time + (time | id), 
-                   fixef = gams, VarCorr = taus, sigma = sigma, 
-                   data = sim_dat)
+# I use `I(time - 1)` so that the intercept is for the first time point
+sim_m5 <- makeLmer(
+    y ~ treat + I(time - 1) + treat:I(time - 1) + (I(time - 1) | id),
+    fixef = gams, VarCorr = taus, sigma = sigma,
+    data = sim_dat
+)
 # Check R^2
 r.squaredGLMM(sim_m5)
 # Compare to a model without the binary treatment predictor
-sim_m5n <- makeLmer(y ~ time + (time | id), 
-                    fixef = gams[c(1, 3)], VarCorr = taus, sigma = sigma, 
-                    data = sim_dat)
+sim_m5null <- makeLmer(y ~ I(time - 1) + (I(time - 1) | id),
+                       fixef = gams[c(1, 3)], VarCorr = taus, sigma = sigma,
+                       data = sim_dat)
 # Check R^2
-r.squaredGLMM(sim_m5n)
-# So treat corresponds to an R^2 change of about 10%
+r.squaredGLMM(sim_m5null)
+# So treat and its interaction corresponds to an R^2 change of about 2%
 ```
 
 ### Obtain simulation-based power
 
-Use various numbers of clusters
+Use various numbers of clusters. The default is to test the first fixed effect (i.e., `treat`, group difference at the initial time point) using a likelihood ratio test. The true value of this coefficient, so the estimated power is actually Type I error in this case.
 
-Note: by default the first term in the fixed effect (other than the intercept)
-will be tested. We'll first specify the effect of treat.
-
-```{r powers_m5, cache=TRUE, message=FALSE}
-# Use it on our example:
-powers_m5 <- power_extend(sim_m5, 
-                          along = "id", 
-                          new_size = c(10, 20, 50, 100), 
-                          nsim = 100)
-plot_power_extend(powers_m5)
+```{r powers_m5, cache = TRUE, message = FALSE}
+# Increase to 100 participants
+sim_m5_100J <- extend(sim_m5, along = "id", n = 100)
+powers_m5 <- powerCurve(
+    sim_m5_100J, along = "id", breaks = c(10, 20, 50, 100),
+    nsim = 100, progress = FALSE
+)
+powers_m5
+plot(powers_m5)
 ```
 
-And then the slope difference
+Now test the slope difference (i.e., `treat:time` interaction)
 
-```{r powers_m5-2, cache=TRUE, message=FALSE}
-# Use it on our example:
-powers_m5 <- power_extend(sim_m5, 
-                          along = "id", 
-                          new_size = c(10, 20, 50, 100), 
-                          nsim = 100, 
-                          test = fixed("treat:time", 
-                                       method = "anova"))
-plot_power_extend(powers_m5)
+```{r powers_m5-2, cache = TRUE, message = FALSE}
+powers_m5_int <- powerCurve(
+    sim_m5_100J, along = "id", breaks = c(10, 20, 50, 100),
+    test = fixed("treat:I(time - 1)", method = "anova"),
+    nsim = 100, progress = FALSE
+)
+plot(powers_m5_int)
 ```
 
 Use more time points
 
-```{r powers_m5-3, cache=TRUE, message=FALSE}
-# Use the `time_points` argument
-powers_m5 <- power_extend(sim_m5, 
-                          along = "time", 
-                          time_points = c(4, 8), 
-                          nsim = 100)
-plot_power_extend(powers_m5)
+```{r powers_m5-3, cache = TRUE, message = FALSE}
+# Increase to 8 time points
+sim_m5_50n <- extend(sim_m5, along = "time", values = 1:8)
+powers_m5_n <- powerCurve(
+    sim_m5_50n, along = "time", breaks = c(4, 6, 8),
+    nsim = 100, progress = FALSE,
+    test = fixed("treat:I(time - 1)", method = "anova")
+)
+powers_m5_n
+plot(powers_m5_n)
 ```
 
-Increasing number of time points does not help the power with the intercept difference. Now let's look at the slope difference. 
-
-```{r powers_m5-4, cache=TRUE, message=FALSE}
-# Use the `time_points` argument
-powers_m5 <- power_extend(sim_m5, 
-                          along = "time", 
-                          time_points = c(4, 8), 
-                          nsim = 100, 
-                          test = fixed("treat:time", 
-                                       method = "anova"))
-plot_power_extend(powers_m5)
-```
+Increasing number of time points only helps only a little for testing the slope difference.

@@ -46,6 +46,7 @@ website:
         - codes/rcode4.qmd
         - codes/rcode5.qmd
         - codes/rcode6.qmd
+        - codes/rcode7.qmd
 
 format:
   html:
