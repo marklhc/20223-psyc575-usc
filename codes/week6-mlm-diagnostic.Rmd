@@ -27,44 +27,6 @@ library(modelsummary)  # for tables
 library(broom.mixed)  # for obtaining residuals
 ```
 
-Here's a function I created for marginal model plots
-
-```{r mmps_lmer}
-mmps_lmer <- function(object) {
-    plot_df <- object@frame
-    form <- formula(object)
-    xvar <- attr(attr(plot_df, "terms"), "varnames.fixed")[-1]
-    plot_df$.fitted_x <- fitted(object)
-    plot_df$.fitted <- plot_df$.fitted_x
-    plot_df$.rowid <- seq_len(nrow(plot_df))
-    plot_df_long <- reshape(plot_df,
-        direction = "long",
-        varying = c(xvar, ".fitted_x"),
-        v.names = "xvar",
-        idvar = ".rowid"
-    )
-    plot_df_long$varname <- rep(c(xvar, ".fitted"),
-        each = nrow(plot_df)
-    )
-    ggplot(
-        data = plot_df_long,
-        aes_string(x = "xvar", y = paste(form[[2]]))
-    ) +
-        geom_point(size = 0.5, alpha = 0.3) +
-        geom_smooth(aes(col = "data"), se = FALSE) +
-        geom_smooth(aes(y = .fitted, col = "model"),
-            linetype = "dashed", se = FALSE
-        ) +
-        facet_wrap(~varname, scales = "free_x") +
-        labs(color = NULL, x = NULL) +
-        scale_color_manual(values = c(
-            "data" = "blue",
-            "model" = "red"
-        )) +
-        theme(legend.position = "bottom")
-}
-```
-
 ```{r import_sav, message = FALSE}
 # Read in the data (pay attention to the directory)
 hsball <- read_sav(here("data_files", "hsball.sav"))
@@ -303,14 +265,12 @@ For: leverage points and outliers
 To examine whether some cases have a disproportionately strong influence on the results, we can look at the influence index plot and dfbeta.
 
 ```{r influence_plots, fig.asp = 1.6}
-# It seems that the influence() function only supports object of class `data.frame`, so we need to 
-# change the data class and refit the model
 library(car)
 inf_m3 <- influence(m3, "id")  # get cluster-level influence statistics
 car::infIndexPlot(inf_m3)
 ```
 
-If you need some cutoffs, the cutoff for dfbeta is $2 / \sqrt{job}$, which would be `r 2 / sqrt(160)` in our example; cutoff for Cook's distance is $4 / (J - 2)$, which would be `r 4 / (160 - 2)` in our example. So while some of the clusters exert more influence on the results than others, they all seem to be within the normal sampling variability that one would expect. If some clusters are above the cutoffs, then you should look at those clusters to see whether there are coding errors or something unique about them. You can do a sensitivity analysis with and without those clusters. 
+If you need some cutoffs, the cutoff for dfbeta is $2 / \sqrt{J}$, which would be `r 2 / sqrt(160)` in our example; cutoff for Cook's distance is $4 / (J - 2)$, which would be `r 4 / (160 - 2)` in our example. So while some of the clusters exert more influence on the results than others, they all seem to be within the normal sampling variability that one would expect. If some clusters are above the cutoffs, then you should look at those clusters to see whether there are coding errors or something unique about them. You can do a sensitivity analysis with and without those clusters. 
 
 ## Bonus: Bayesian Robust MLM
 

@@ -259,7 +259,9 @@ dates <- paste(
 |                 |                                         | 4.4, 4.5                       |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 6\         | - Model assumptions and diagnostics     | - SB ch 10                     | - Exercise 6           |
-| Sep 27 & 29     | - Reporting results                     | - [10 quick tips to improve    | - HW 5                 |
+| Sep 27 & 29     | - Reporting results                     | - Meteyard & Davies (2020)     | - HW 5                 |
+|                 |                                         | - [McCoach (2019 chapter)][9]  |                        |
+|                 |                                         | - [10 quick tips to improve    |                        |
 |                 |                                         | your regression modeling][5]   |                        |
 +-----------------+-----------------------------------------+--------------------------------+------------------------+
 | Week 7\         | - Sample size planning                  | - SB ch 11                     | - Exercise 7           |
@@ -305,6 +307,7 @@ SB = Snijders & Bosker (2012)
 [6]: https://link.springer.com/content/pdf/10.3758/BF03192848.pdf
 [7]: https://www-taylorfrancis-com.libproxy1.usc.edu/books/9781315744094/chapters/10.4324/9781315744094-17
 [8]: https://www-taylorfrancis-com.libproxy1.usc.edu/books/9781315744094/chapters/10.4324/9781315744094-12
+[9]: https://www-taylorfrancis-com.libproxy2.usc.edu/books/e/9781315755649/chapters/10.4324/9781315755649-22
 
 ```{bash}
 #| eval: false
