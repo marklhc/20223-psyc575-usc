@@ -1,5 +1,5 @@
 ---
-title: "Week 4"
+title: "Week 4: Lv-1 Predictor"
 subtitle: "Effect Decomposition, Random Coefficient Model, and Cross-level Interactions"
 execute:
   echo: false

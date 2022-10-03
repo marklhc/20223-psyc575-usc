@@ -1,5 +1,5 @@
 ---
-title: "Week 6"
+title: "Week 6: Diagnostics"
 subtitle: "Model Diagnostics and Results Reporting"
 execute:
   echo: false

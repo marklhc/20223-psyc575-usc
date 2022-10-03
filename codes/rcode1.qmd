@@ -1,5 +1,5 @@
 ---
-title: "R Codes (Week 1)"
+title: "Week 1 (R): R Markdown"
 format:
   html:
     code-tools:
