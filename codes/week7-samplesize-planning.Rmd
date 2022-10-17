@@ -472,4 +472,4 @@ powers_m5_n
 plot(powers_m5_n)
 ```
 
-Increasing number of time points only helps only a little for testing the slope difference.
+Increasing number of time points helps a little bit for testing the slope difference.

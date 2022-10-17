@@ -57,7 +57,7 @@ add_youtube("V4mtI2F7pTA")
 
 Quiz on null hypothesis significance testing. We will cover the quiz solution in class.
 
-Quiz pdf [here](week13_quiz.pdf)
+Quiz pdf [here](week7_quiz.pdf)
 
 :::
 
@@ -149,8 +149,6 @@ practice_question(
 )
 ```
 
-Answer: Decreases
-
 ### hcbr Demo
 
 ```{r}
@@ -163,7 +161,7 @@ One advantage of this program is it analytically solves for the number of cluste
 
 ## Practice yourself
 
-Given that $\delta = .2$ with a standard error of $.05$, and ICC $= .1$, with a standard error of $ = .05$. What is the required $J$ if $n = 2$ and $n = 20$?
+Given that $\delta$ = .2 with a standard error of .05, and ICC = .1, with a standard error of .05. What is the required $J$ if $n$ = 2 and $n$ = 20?
 
 :::
 
