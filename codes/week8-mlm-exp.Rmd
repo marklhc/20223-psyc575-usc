@@ -1,0 +1,502 @@
+---
+title: "Multilevel Models for Experimental Data"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">#")
+```
+
+## Load Packages and Import Data
+
+```{r load-pkg, message=FALSE}
+# To install a package, run the following ONCE (and only once on your computer)
+# install.packages("psych")  
+library(here)  # makes reading data more consistent
+library(tidyverse)  # for data manipulation and plotting
+library(haven)  # for importing SPSS/SAS/Stata data
+library(lme4)  # for multilevel analysis
+library(lmerTest)  # for testing coefficients
+library(MuMIn)  # for R^2
+library(sjPlot)  # for plotting effects
+library(emmeans)  # for marginal means
+library(modelsummary)  # for making tables
+```
+
+This note focused on within-subjects experimental designs, as between-subjects designs are generally easier to handle with the treatment condition at the upper level. When clusters of people are randomly assigned, the design is called a cluster-randomized trial. See an example here: https://www.sciencedirect.com/science/article/abs/pii/S0022103117300860.
+
+```{r driving_dat}
+# Data example of Hoffman & Atchley (2001)
+# Download from the Internet, unzip, and read in
+zip_path <- here("data_files", "MLM_for_Exp_Appendices.zip")
+if (!file.exists(zip_path)) {
+    download.file(
+        "http://www.lesahoffman.com/Research/MLM_for_Exp_Appendices.zip",
+        zip_path
+    )
+}
+driving_dat <- read_sav(unz(zip_path, "MLM_for_Exp_Appendices/Ex1.sav"))
+# Convert `sex` and `oldage` to factor
+# Note: also convert id and Item to factor (just for plotting)
+driving_dat <- driving_dat %>%
+    mutate(
+        sex = as_factor(sex),
+        oldage = factor(oldage,
+            levels = c(0, 1),
+            labels = c("Below Age 40", "Over Age 40")
+        ),
+        # id = factor(id),
+        Item = factor(Item)
+    )
+# Show data
+rmarkdown::paged_table(driving_dat)
+```
+
+With SPSS data, you can view the variable labels by 
+
+```{r show-labels}
+# Show the variable labels
+cbind(
+    map(driving_dat, attr, "label")
+)
+```
+
+## Wide and Long Format
+
+The data we used here is in what is called a *long format*, where each row corresponds to a unique observation, and is required for MLM. More commonly, however, you may have data in a *wide format*, where each row records multiple observations for each person, as shown below.
+
+```{r driving_wide, include = FALSE}
+driving_wide <- pivot_wider(driving_dat, id_cols = c(id, sex, age),
+                            names_from = NAME, values_from = rt_sec)
+```
+
+```{r print-driving_wide}
+# Show data
+rmarkdown::paged_table(driving_wide)
+```
+
+As can be seen above, `rt_sec1` to `rt_sec80` are the responses to the 51 items. If your data are like the above, you need to convert it to a long format. In R, this can be achieved using the `pivot_long()` function, as part of `tidyverse` (in the `tidyr` package):
+
+```{r long-to-wide}
+driving_wide %>%
+    pivot_longer(
+        cols = rt_sec1:rt_sec80, # specify the columns of repeated measures
+        names_to = "Item", # name of the new column to create to indicate item id
+        names_prefix = "rt_sec", # remove "rt_sec" from the item ID column
+        values_to = "rt_sec", # name of new column containing the response
+    ) %>%
+    rmarkdown::paged_table()
+```
+
+## Descriptive Statistics
+
+### Missing Data Rate for Response Time:
+
+```{r missing-data}
+driving_dat %>%
+    group_by(id) %>%
+    summarise(n_missing = sum(is.na(rt_sec))) %>%
+    ggplot(aes(x = n_missing)) +
+    geom_bar()
+```
+
+Note that only about 80 people have no missing data
+
+### Plotting
+
+Let's explore the data a bit with `psych::pairs.panels()`.
+
+```{r pairs, warning = FALSE, fig.asp = 1}
+driving_dat %>%
+    # Select six variables
+    select(sex, age, rt_sec, meaning, salience, lg_rt) %>%
+    psych::pairs.panels(ellipses = FALSE, cex = 0.2, cex.cor = 1)
+```
+
+Note the nonnormality in response time. There doesn't appear to be much gender differences. 
+
+Below is a plot between response time against age:
+
+Left: original response time; Right: Natural log transformation
+
+```{r plot-rt-age}
+p1 <- driving_dat %>%
+    ggplot(aes(x = age, y = rt_sec)) +
+    geom_jitter(width = 0.5, height = 0, alpha = 0.5) +
+    geom_smooth()
+p2 <- driving_dat %>%
+    ggplot(aes(x = age, y = lg_rt)) +
+    geom_jitter(width = 0.5, height = 0, alpha = 0.5) +
+    geom_smooth()
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+## Cross-Classified Random Effect Analysis
+
+```{r network-graph, echo=FALSE}
+DiagrammeR::grViz("
+digraph boxes_and_circles {
+  graph [layout = neato, overlap = true, fontsize = 30]
+
+  node [penwidth = 0, fontname = 'Helvetica']
+  # Person
+  1 [pos = '-2,1!', label='Person 1']
+  2 [pos = '-1,1!', label='Person 2'] 
+  3 [pos = '0,1!', label='Person 3']
+  4 [pos = '1,1!', label='Person 4']
+  5 [pos = '2,1!', label='Person 5']
+  # Repeated measures
+  y1 [pos = '-2.33,0!']
+  y2 [pos = '-2,0!']
+  y3 [pos = '-1.67,0!']
+  y4 [pos = '-1.33,0!']
+  y5 [pos = '-1,0!']
+  y6 [pos = '-0.67,0!']
+  y7 [pos = '-0.33,0!']
+  y8 [pos = '0,0!']
+  y9 [pos = '0.33,0!']
+  y10 [pos = '0.67,0!']
+  y11 [pos = '1,0!']
+  y12 [pos = '1.33,0!']
+  y13 [pos = '1.67,0!']
+  y14 [pos = '2,0!']
+  y15 [pos = '2.33,0!']
+  
+  # Item
+  i1 [pos = '-1.5,-1!', label='Item 1']
+  i2 [pos = '-0,-1!', label='Item 2']
+  i3 [pos = '1.5,-1!', label='Item 3']
+
+  # edges
+  edge [dir = 'none']
+  1 -> {y1; y2; y3}
+  2 -> {y4; y5; y6}
+  3 -> {y7; y8; y9}
+  4 -> {y10; y11; y12}
+  5 -> {y13; y14; y15}
+  {y1 y4 y7 y10 y13} -> i1
+  {y2 y5 y8 y11 y14} -> i2
+  {y3 y6 y9 y12 y15} -> i3
+}
+")
+```
+
+## Intraclass Correlations and Design Effects
+
+> Note: I used `lg_rt` in the slides as the outcome variable, whereas here, I directly specify the `log` inside `lmer()`. The two should give identical model fit and estimates. Using `log(rt_sec)` has the benefit of getting plots on the original response time variable; however, if you prefer plots on the log scale, you may want to use `lg_rt` instead. 
+
+```{r icc-m0}
+m0 <- lmer(log(rt_sec) ~ (1 | id) + (1 | Item), data = driving_dat)
+vc_m0 <- as.data.frame(VarCorr(m0))
+# ICC/Deff (person; cluster size = 51)
+icc_person <- vc_m0$vcov[1] / sum(vc_m0$vcov)
+# ICC (item; cluster size = 153)
+icc_item <- vc_m0$vcov[2] / sum(vc_m0$vcov)
+# ICC (person + item)
+c("ICC(person + item)" = sum(vc_m0$vcov[1:2]) / sum(vc_m0$vcov))
+```
+
+```{r deff-m0}
+# For deff(person), need to take out the part for item
+c("ICC(person)" = icc_person,
+  "Deff(person)" = (1 - icc_item) + (51 - 1) * icc_person)
+# For deff(item), need to take out the part for person
+c("ICC(item)" = icc_item,
+  "Deff(item)" = (1 - icc_person) + (153 - 1) * icc_item)
+```
+
+So both the item and the person levels are needed.
+
+### Visualizing person-level and item-level variances
+
+```{r var-across-person-item}
+set.seed(2124)
+# Variation across persons
+random_ids <- sample(unique(driving_dat$id), size = 15)
+driving_dat %>%
+    filter(id %in% random_ids) %>%  # select only 15 persons
+    ggplot(aes(x = factor(id), y = lg_rt)) +
+    geom_jitter(height = 0, width = 0.1, alpha = 0.3) +
+    # Add person means
+    stat_summary(fun = "mean", geom = "point", col = "red",
+      shape = 17,  # use triangles
+      size = 4  # make them larger
+    ) +
+    # change axis labels
+    labs(x = "Person ID", y = "log(reaction time)")
+# Variation across items
+random_items <- sample(unique(driving_dat$Item), size = 15)
+driving_dat %>%
+    filter(Item %in% random_items) %>%  # select only 15 items
+    ggplot(aes(x = factor(Item), y = lg_rt)) +
+    geom_jitter(height = 0, width = 0.1, alpha = 0.3) +
+    # Add item means
+    stat_summary(fun = "mean", geom = "point", col = "purple",
+      shape = 17,  # use triangles
+      size = 4  # make them larger
+    ) +
+    # change axis labels
+    labs(x = "Item ID", y = "log(reaction time)")
+```
+
+> Now, it can be seen that `c_mean` and `c_sal` are item-level variables. The model is complex, but one thing that we don't need to worry is that if the experimental design is balanced (i.e., every item was administered to every person), we don't need to worry about cluster-means and cluster-mean centering. In this case, `c_mean` and `c_sal` are purely item-level variables with no person-level variance. You can verify this:
+
+```{r icc-c_mean}
+lmer(c_mean ~ (1 | id), data = driving_dat)
+```
+
+You can see that the between-person variance for `c_mean` is zero. This, however, may not apply to unbalanced data, in which case cluster-means may still be needed. 
+
+## Full Model
+
+### Equations
+
+Repeated-Measure level (Lv 1):
+$$\log(\text{rt\_sec}_{i(j,k)}) = \beta_{0(j, k)} + e_{ijk}$$
+Between-cell (Person $\times$ Item) level (Lv 2):
+$$\beta_{0(j, k)} = \gamma_{00} + \beta_{1j} \text{meaning}_{k} + \beta_{2j} \text{salience}_{k} + \beta_{3j} \text{meaning}_{k} \times \text{salience}_{k} + \beta_{4k} \text{oldage}_{j} + u_{0j} + v_{0k}$$
+Person level (Lv 2a) random slopes
+$$
+\begin{aligned}
+  \beta_{1j} = \gamma_{10} + \gamma_{11} \text{oldage}_{j} + u_{1j} \\
+  \beta_{2j} = \gamma_{20} + \gamma_{21} \text{oldage}_{j} + u_{2j} \\
+  \beta_{3j} = \gamma_{30} + \gamma_{31} \text{oldage}_{j} + u_{3j} \\
+\end{aligned}
+$$
+Item level (Lv2b) random slopes
+$$\beta_{4k} = \gamma_{40} + v_{4k}$$
+Combined equations
+$$
+\begin{aligned}
+  \log(\text{rt\_sec}_{i(j,k)}) & = \gamma_{00} \\ 
+                        & + \gamma_{10} \text{meaning}_{k} + \gamma_{20} \text{salience}_{k} + \gamma_{30} \text{meaning}_{k} \times \text{salience}_{k} + \gamma_{40} \text{oldage}_{j} \\
+                        & + \gamma_{11} \text{meaning}_{k} \times \text{oldage}_{j} + \gamma_{21} \text{salience}_{k} \times \text{oldage}_{j} + \gamma_{31} \text{meaning}_{k} \times \text{oldage}_{j} \times \text{oldage}_{j} + \\
+                        & + u_{0j} + u_{1j} \text{meaning}_{k} + u_{2j} \text{salience}_{k} + u_{3j} \text{meaning}_{k} \times \text{salience}_{k} \\
+                        & + v_{0k} + v_{4k} \text{oldage}_{j} \\
+                        & + e_{ijk}
+\end{aligned}
+$$
+
+### Testing random slopes
+
+The random slopes can be tested one by one:
+
+```{r test-random-slopes}
+# First, no random slopes
+m1 <- lmer(log(rt_sec) ~ c_mean * c_sal * oldage + (1 | id) + (1 | Item),
+           data = driving_dat)
+# Then test random slopes one by one
+# Random slopes of oldage (person-level) across items
+m1_rs1 <- lmer(
+    log(rt_sec) ~ c_mean * c_sal * oldage + (1 | id) + (oldage | Item),
+    data = driving_dat
+)
+# Test (see the line that says "oldage in (oldage | Item)")
+ranova(m1_rs1)  # statistically significant, indicating varying slopes of
+                # oldage
+# Random slopes of c_mean (item-level) across persons
+m1_rs2 <- lmer(log(rt_sec) ~ c_mean * c_sal * oldage + (c_mean:c_sal | id) +
+                 (1 | Item),
+               data = driving_dat)
+# Test (see the line that says "c_mean:c_sal in (c_mean:c_sal | id)")
+ranova(m1_rs2)  # not statistically significant
+# Random slopes of c_mean (item-level) across persons
+m1_rs3 <- lmer(
+    log(rt_sec) ~ c_mean * c_sal * oldage + (c_mean | id) + (1 | Item),
+    data = driving_dat
+)
+# Test
+ranova(m1_rs3)  # not statistically significant
+# Random slopes of c_sal (item-level) across persons
+m1_rs4 <- lmer(
+    log(rt_sec) ~ c_mean * c_sal * oldage + (c_sal | id) + (1 | Item),
+    data = driving_dat
+)
+# Test
+ranova(m1_rs4)  # statistically significant
+```
+
+So the final model should include random slopes of `oldage` (a person-level predictor) across items and `c_sal` (an item-level predictor) across persons.
+
+```{r explore-models}
+m1_rs <- lmer(log(rt_sec) ~ c_mean * c_sal * oldage +
+                  (c_sal | id) + (oldage | Item),
+              data = driving_dat)
+# There was a convergence warning for the above model, but running
+# `lme4::allFit()` shows that other optimizers gave the same results
+# LRT for three-way interaction (not significant)
+confint(m1_rs, parm = "c_mean:c_sal:oldageOver Age 40")
+# Dropping non-sig 3-way interaction
+m2_rs <- lmer(log(rt_sec) ~ (c_mean + c_sal + oldage)^2 + (c_sal | id) +
+                (oldage | Item),
+              data = driving_dat)
+# Compare model with and without two-way interactions
+m3_rs <- lmer(log(rt_sec) ~ c_mean + c_sal + oldage + (c_sal | id) +
+                (oldage | Item),
+              data = driving_dat)
+anova(m2_rs, m3_rs)  # LRT not significant
+# So we keep the additive model (i.e., no interaction)
+```
+
+### Coefficients
+
+```{r msummary-m1_rs}
+msummary(
+    list(additive = m3_rs,
+         `3-way interaction` = m1_rs),
+    # Need the following when there are more than two levels
+    group = group + term ~ model)
+```
+
+#### Plot the 3-way interaction
+
+Even though the 3-way interaction was not statistically significant, given that it was part of the prespecified hypothesis, let's plot it
+
+> Note: the graphs here are based on the original response time (i.e., before log transformation), so they look different from the ones in the slides, which plotted the y-axis on the log scale. 
+
+```{r plot-m1_rs}
+plot_model(m1_rs, type = "int",
+           show.data = TRUE, jitter = 0.1,
+           dot.alpha = 0.5, dot.size = 0.2)
+```
+
+#### Plot the marginal age effect
+
+```{r plot-m3_rs}
+# plot_model() function is from the `sjPlot` package
+plot_model(m3_rs,
+    type = "pred", terms = "c_mean",
+    show.data = TRUE, jitter = 0.1,
+    dot.alpha = 0.5, dot.size = 0.1
+)
+# Plot random slopes
+plot_model(m3_rs,
+    type = "pred",
+    terms = c("c_sal", "id [1:274]"),
+    pred.type = "re", show.legend = FALSE,
+    colors = "black", line.size = 0.3,
+    show.data = TRUE, jitter = 0.1,
+    dot.alpha = 0.5, dot.size = 0.1,
+    # suppress confidence band
+    ci.lvl = NA
+)
+# Plot first 15 items
+plot_model(m3_rs,
+    type = "pred",
+    terms = c("Item [1:15]", "oldage"),
+    pred.type = "re"
+) +
+    theme(legend.position = "top")
+```
+
+## Predicted Value for Specified Conditions
+
+When reporting results, one thing that students or researchers usually want to get is model predictions for different experimental conditions. With our example, there were three predictors, so we can get predictions for various value combinations on the three predictors. For example, one may be interested in the following levels:
+
+- `c_mean`: -3 vs. 2
+- `c_sal`: -2 vs. 2
+- `oldage`: Below Age 40 vs. Over Age 40
+
+You can obtain predictions with the equations, which is usually the most reliable way in many cases (as long as you double and triple-check your calculations). However, with `lme4`, you can also use the `predict()` function and specify a data frame with all the combinations. 
+
+```{r predict-m3_rs}
+# Create data frame for prediction; 
+# the `crossing()` function generates all combinations of the input levels
+pred_df <- crossing(
+    c_mean = c(-3, 2),
+    c_sal = c(-2, 2),
+    oldage = c("Below Age 40", "Over Age 40")
+)
+# Add predicted values (log rt)
+pred_df %>%
+    mutate(
+        .predicted = predict(m3_rs,
+            # "newdata = ." means using the current data
+            newdata = .,
+            # "re.form = NA" means to not use random effects for prediction
+            re.form = NA
+        )
+    )
+```
+
+## Marginal Means
+
+While the `predict()` function is handy, it requires users to specify values for each predictor. Sometimes researchers may simply be interested in the predicted means for levels of one or two predictors, *while averaging across other predictors in the model*. When averaging across one or more variables, the predicted means are usually called the marginal means. In this case, the `emmeans` package will be handy. 
+
+For example, suppose we are interested in only the marginal means for those below age 40 and those above age 40. We can use the following:
+
+```{r emm-m3_rs}
+(emm_m3_rs <- emmeans(m3_rs, specs = "oldage", weights = "cell"))
+# Plotting the means
+plot(emm_m3_rs)
+```
+
+You can also obtain the marginal means for the transformed response variable. For example, because our response variable is log(rt), we can get the marginal means for the original response time variable:
+
+```{r emm-m3_rs-exp}
+emmeans(m3_rs, specs = "oldage", weights = "cell", type = "response")
+```
+
+## Effect Size
+
+You can compute $R^2$. Using the additive model, the overall $R^2$ is
+
+```{r r2-m3_rs}
+MuMIn::r.squaredGLMM(m3_rs)
+# Alternatively
+performance::r2(m3_rs)
+```
+
+With counterbalancing, the item-level (`c_mean` and `c_sal`) and the person-level (`oldage`) predictors are orthogonal, so we can get an $R^2$ for the item-level predictors and an $R^2$ for the person-level predictor, and they should add up approximately to the total $R^2$. For example:
+
+```{r r2-m3_rs_part}
+# Person-level (oldage)
+m3_rs_oldage <- lmer(log(rt_sec) ~ oldage + (1 | id) +
+                       (oldage | Item), data = driving_dat)
+r.squaredGLMM(m3_rs_oldage)
+# Item-level (salience + meaning)
+m3_rs_sal_mean <- lmer(log(rt_sec) ~ c_sal + c_mean + (c_sal | id) +
+                         (1 | Item), data = driving_dat)
+r.squaredGLMM(m3_rs_sal_mean)
+```
+
+The two above add up close to the total $R^2$. However, `c_sal` and `c_mean` are positively correlated, so their individual contributions to the $R^2$ would not add up to the value when both are included (as there is some overlap in their individual $R^2$). In this case, you can still report the individual $R^2$, but also remember to report the total. 
+
+```{r r2-m3_rs_part2}
+# Salience only
+m3_rs_sal <- lmer(log(rt_sec) ~ c_sal + (c_sal | id) +
+                         (1 | Item), data = driving_dat)
+r.squaredGLMM(m3_rs_sal)
+# Meaning only
+m3_rs_mean <- lmer(log(rt_sec) ~ c_mean + (1 | id) +
+                         (1 | Item), data = driving_dat)
+r.squaredGLMM(m3_rs_mean)
+```
+
+As a note, the $R^2$s presented above are analogous to the $\eta^2$ effect sizes in ANOVA.
+
+## Diagnostics
+
+### Marginal model plots
+
+```{r diag-m3_rs}
+# Some discrepancy can be seen for `c_sal`
+plot_model(m3_rs, type = "slope", show.data = TRUE)
+```
+
+### Residual Plots
+
+```{r resid-vs-fitted}
+# Get OLS residuals
+m3_resid <- broom.mixed::augment(m3_rs) %>%
+    mutate(.ols_resid = `log(rt_sec)` - .fixed)
+# OLS residuals against predictted
+ggplot(m3_resid, aes(x = .fixed, y = .ols_resid)) +
+    geom_point(size = 0.7, alpha = 0.5) +
+    geom_smooth(se = FALSE)
+```
+
+You can see an angled bound in the bottom left of the graph, which is due to the outcome being non-negative. You should plot the residuals against other predictors as well.

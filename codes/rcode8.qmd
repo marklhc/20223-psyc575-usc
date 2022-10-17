@@ -1,0 +1,20 @@
+---
+title: "Week 8 (R): MLM for Experiments"
+execute:
+  echo: false
+format:
+  html:
+    code-tools:
+      source: week8-mlm-exp.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week8-mlm-exp"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+```
+
+{{< include _rcode-common.qmd >}}
