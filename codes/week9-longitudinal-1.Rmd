@@ -1,0 +1,533 @@
+---
+title: "Longitudinal Data Analysis in R (Part 1)"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">#")
+```
+
+## Load Packages and Import Data
+
+```{r load-pkg, message=FALSE}
+# To install a package, run the following ONCE (and only once on your computer)
+# install.packages("psych")
+library(here)  # makes reading data more consistent
+library(tidyverse)  # for data manipulation and plotting
+library(haven)  # for importing SPSS/SAS/Stata data
+library(lme4)  # for multilevel analysis
+library(splines)  # for spline models
+library(brms)  # for Bayesian multilevel analysis
+library(modelsummary)  # for making tables
+library(sjPlot)  # for plots
+```
+
+```{r import_sav, message = FALSE}
+curran_path <- here("data_files", "CurranData.sav")
+if (!file.exists(curran_path)) {
+    download.file(
+        "https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%205/Curran/CurranData.sav",
+        curran_path
+    )
+}
+# Read in the data from GitHub (need Internet access)
+curran_wide <- read_sav(curran_path)
+# Make id a factor
+curran_wide  # print the data
+```
+
+### Wide to Long
+
+To perform multilevel analysis, we need to restructure the data from a wide format to a long format:
+
+```{r curran_long}
+# Using the new `tidyr::pivot_longer()` function
+curran_long <- curran_wide %>%
+    pivot_longer(
+        c(anti1:anti4, read1:read4),  # variables that are repeated measures
+        # Convert 8 columns to 3: 2 columns each for anti/read (.value), and
+        # one column for time
+        names_to = c(".value", "time"),
+        # Extract the names "anti"/"read" from the names of the variables for the
+        # value columns, and then the number to the "time" column
+        names_pattern = "(anti|read)([1-4])",
+        # Convert the "time" column to integers
+        names_transform = list(time = as.integer)
+    )
+curran_long %>%
+    select(id, anti, read, time, everything())
+```
+
+# Data Exploration
+
+```{r pairs-data}
+curran_long %>%
+    select(time, kidage, homecog, anti, read) %>%
+    psych::pairs.panels(jiggle = TRUE, factor = 0.5, ellipses = FALSE,
+                        cex.cor = 1, cex = 0.5)
+```
+
+What distinguishes longitudinal data from usual cross-sectional multilevel data is the *temporal ordering*. In the example of students nested within schools, we don't say that student 1 is naturally before student 2, and it doesn't matter if one reorders the students. However, in longitudinal data, such temporal sequence is very important, and we cannot simply rearrange the observation at time 2 to be at time 1. A related concern is the presence of autocorrelation, with which observations closer in time will be more similar to each other.
+
+## Spaghetti Plot
+
+```{r p1}
+# Plotting
+p1 <- ggplot(curran_long, aes(x = time, y = read)) +
+    geom_point(alpha = 0.3) +
+    # add lines to connect the data for each person
+    geom_line(aes(group = id), alpha = 0.3) +
+    # add a mean trajectory
+    stat_summary(fun = "mean", col = "red", size = 1, geom = "line")
+p1
+```
+
+We can see that, on average, there is an increasing trend across time, but also a lot of variations in each individual's starting point and the trajectory of change.
+
+We can also plot the trajectory for a random sample of individuals:
+
+```{r facet-traj}
+# Randomly sample 40 individuals
+set.seed(1349)
+sampled_id <- sample(unique(curran_long$id), 40)
+curran_long %>%
+    filter(id %in% sampled_id) %>%
+    ggplot(aes(x = time, y = read)) +
+    geom_point() +
+    geom_line() +  # add lines to connect the data for each person
+    facet_wrap(~ id, ncol = 10)
+```
+
+## Temporal Covariances and Correlations
+
+```{r cov-cor-read}
+# Easier with the wide data set
+# Covariance matrix:
+curran_wide %>%
+    select(starts_with("read")) %>%
+    cov(use = "complete") %>%   # listwise deletion
+    round(2L)  # two decimal places
+# Correlation matrix
+curran_wide %>%
+    select(starts_with("read")) %>%
+    cor(use = "complete") %>%   # listwise deletion
+    round(2L)  # two decimal places
+```
+
+You can see the variances increase over time, and the correlation is generally stronger for observations closer in time.
+
+## Attrition Analyses
+
+To see whether those who dropped out or had missing data differed in some characteristics from those who did not drop out, let's identify the group with complete data on `read`, and the group without complete data on `read`.
+
+```{r mutate-complete}
+# Create grouping
+curran_wide <- curran_wide %>%
+    # Compute summaries by rows
+    rowwise() %>%
+    # First compute the number of missing occasions
+    mutate(nmis_read = sum(is.na(c_across(read1:read4))),
+           # Complete only when nmis_read = 0
+           complete = if_else(nmis_read == 0, "complete", "incomplete")) %>%
+    ungroup()
+# Compare the differences
+datasummary((anti1 + read1 + kidgen + momage + kidage + homecog + homeemo) ~
+              complete * (Mean + SD), data = curran_wide)
+```
+
+The two groups are pretty similar, except that the group with missing seems to have a higher baseline antisocial score, and lower `homecog`. In actual analyses, you may want to adjust for these variables by including them in the model (as covariates), if you suspect a higher probability of dropping out may confound the results.
+
+Of course, the two groups could still be different in important characteristics that are not included in the data. It requires careful investigation of why the data were missing.
+
+# Unconditional Model
+
+::: {.panel-tabset}
+
+#### `lme4`
+
+```{r m00_lme4}
+m00_lme4 <- lmer(read ~ (1 | id), data = curran_long)
+summary(m00_lme4)
+# ICC (from the performance package)
+performance::icc(m00_lme4)
+```
+
+However, `lme4` has some limitations with longitudinal data analysis, as it assumes the so-called *compound symmetry* error covariance structure. Basically, that means that the within-person (level-1) error has constant variance (i.e., $\sigma^2$) over time, and the errors from one time point to the next are not correlated after conditioning on the fixed and random effects. In other words, whatever causes one to have a higher (or lower) score than predicted for today will not carry over to tomorrow.
+
+#### `brms`
+
+There are a few more flexible packages for handling longitudinal data. You will see people use `nlme` a lot. `glmmTMB` is another option. There are also packages with Bayesian estimation, such as `MCMCglmm` and `brms`. For this class, we will use `brms`. Let's replicate the results from `lme4`:
+
+```{r m00}
+m00 <- brm(read ~ (1 | id), data = curran_long,
+           file = "brms_cached_m00")
+summary(m00)
+# ICC
+performance::icc(m00)
+```
+
+You can see that the results are similar. The ICC values are similar too.
+
+:::
+
+# Unstructured Fixed Part/Compound Symmetry* (15.1.1 of Snijders & Bosker, 2012)
+
+Instead of assuming a specific growth shape (e.g., linear), one can allow each time point to have its own mean. This provides an excellent fit to the data, but does not allow for an interpretable description of how individuals change over time, and does not test for any trends. Therefore, it is commonly used only as a reference to compare different growth models.
+
+::: {.panel-tabset}
+
+#### `lme4`
+
+```{r m_cs}
+# Compound Symmetry (i.e., same as repeated measure ANOVA)
+# Use `0 +` to suppress the intercept
+m_cs_lme4 <- lmer(read ~ 0 + factor(time) + (1 | id),
+             data = curran_long)
+summary(m_cs_lme4)  # omnibus test for time
+# This is the equivalent repeated-measure ANOVA model
+# (with different estimation method)
+m_rmaov <- aov(read ~ factor(time) + Error(id), data = curran_long)
+summary(m_rmaov)
+```
+
+#### `brms`
+
+```{r}
+m_cs <- brm(read ~ 0 + factor(time) + (1 | id),
+    data = curran_long,
+    file = "brms_cached_m_cs"
+)
+summary(m_cs)
+```
+
+:::
+
+From this model, you can compute the **conditional ICC**, which is the proportion of between-person variance out of the total variance in the detrended data.
+
+```{r detrended-icc}
+# "Adjusted ICC" = Conditional ICC
+performance::icc(m_cs)
+```
+
+So after removing the trend, the between-person variance is larger than the within-person variance.
+
+# Linear Growth Models
+
+## Linear Model With Time
+
+Level 1: Within-Person
+
+$$\text{read}_{ti} = \beta_{0i} + \beta_{1i} \text{time}_{ti} + e_{ti}$$
+
+Level 2: Between-Person
+
+$$
+  \begin{aligned}
+    \beta_{0i} = \gamma_{00} + u_{0i}  \\
+    \beta_{1i} = \gamma_{10} + u_{1i}
+  \end{aligned}
+$$
+
+::: {.panel-tabset}
+
+```{r}
+# Make 0 the initial time
+curran_long <- curran_long %>%
+    mutate(time0 = time - 1)
+```
+
+#### `lme4`
+
+```{r m_gca}
+# Fit a linear growth model with no random slopes (not commonly done)
+m_gca_lme4 <- lmer(read ~ time0 + (time0 | id), data = curran_long)
+summary(m_gca_lme4)
+```
+
+```{r plot-m_gca}
+random_persons <- sample(unique(curran_long$id), size = 24)
+broom.mixed::augment(m_gca_lme4) %>%
+    # Select only the 24 participants
+    filter(id %in% random_persons) %>%
+    ggplot(aes(x = time0, y = read)) +
+    geom_point() +
+    geom_line(aes(y = .fitted), col = "blue") +
+    facet_wrap(~ id, ncol = 6)
+```
+
+#### `brms`
+
+```{r}
+# Fit a linear growth model with no random slopes (not commonly done)
+m_gca <- brm(read ~ time0 + (time0 | id), data = curran_long,
+             file = "brms_cached_m_gca")
+summary(m_gca)
+```
+
+```{r}
+random_persons <- sample(unique(curran_long$id), size = 24)
+broom.mixed::augment(m_gca) %>%
+    # Select only the 24 participants
+    filter(id %in% random_persons) %>%
+    ggplot(aes(x = time0, y = read)) +
+    geom_point() +
+    # Add 95% confidence band
+    geom_ribbon(aes(ymin = .fitted - 2 * .se.fit,
+                    ymax = .fitted + 2 * .se.fit),
+                alpha = 0.1) +
+    geom_line(aes(y = .fitted), col = "blue") +
+    facet_wrap(~ id, ncol = 6)
+```
+
+:::
+
+# Piecewise Growth Model
+
+A piecewise linear growth assumes two or more phases of linear change across time. For example, we can assume that, for our data, phase 1 is from Time 0 to Time 1, and phase 2 is from Time 1 to Time 3.
+
+Because we're estimating two slopes, we need two predictors: `phase1` represents the initial slope from Time 0 to Time 1, and `phase2` represents the slope from Time 1 to Time 3. The coding is shown below:
+
+$$\begin{bmatrix}
+    \textrm{phase1} & \textrm{phase2} \\
+    0 & 0 \\
+    1 & 0 \\
+    1 & 1 \\
+    1 & 2
+  \end{bmatrix}$$
+  
+To understand the coding, in `phase1` the line changes from Time 0 to Time 1, but stays there. `phase2` has 0 from Time 0 to Time 1 as nothing should have happened. Then, From Time 1 to Time 3, it starts to increase linearly. 
+
+> One way to check whether you've specified the coding correctly is to sum the numbers in every row, which you should get back 0, 1, 2, 3, . . .
+
+Below is an example where intercept = 1, growth in phase 1 = 0.5, growth in phase 2 = 0.8. The dashed line shows the contribution from phase1 (plus the intercept). The red dotted line shows the contribution from phase2. 
+
+```{r piecewise_demo}
+demo_df <- tibble(TIME = c(0, 1, 2, 3))
+ggplot(demo_df, aes(x = TIME)) + 
+    stat_function(fun = function(x) 1 + 0.5 * pmin(x, 1), 
+                  linetype = "dashed", size = 1.5) + 
+    stat_function(fun = function(x) 0.8 * pmax(x - 1, 0), col = "red", 
+                  linetype = "dotted", size = 1.5) + 
+    stat_function(fun = function(x) 1 + 0.5 * pmin(x, 1) + 0.8 * pmax(x - 1, 0))
+```
+
+Now, we assume Time 0 to Time 1 has one slope, and Time 1 to Time 3 has another slope.
+
+```{r phase1phase2}
+# Compute phase1 and phase2
+curran_long <- curran_long %>%
+    mutate(phase1 = pmin(time0, 1),  # anything bigger than 1 becomes 1
+           phase2 = pmax(time0 - 1, 0))  # set time to start at TIME 1, and then make
+# anything smaller than 0 to 0
+# Check the coding:
+curran_long %>%
+    select(time0, phase1, phase2) %>%
+    distinct()
+```
+
+We can define a function `piece()` that gives us the coding to be used in the model formula:
+
+```{r}
+piece <- function(x, node) {
+    cbind(pmin(x, node),
+          pmax(x - node, 0))
+}
+```
+
+::: {.panel-tabset}
+
+#### `lme4`
+
+```{r m_pw_lme4}
+# Fit the piecewise growth model
+m_pw_lme4 <- lmer(read ~ piece(time0, node = 1) +
+                      (piece(time0, node = 1) | id),
+                  data = curran_long)
+summary(m_pw_lme4)
+```
+
+#### `brms`
+
+```{r m_pw}
+# Fit the piecewise growth model (using the `I()` syntax)
+# for easier plotting
+m_pw <- brm(
+    read ~ piece(time0, node = 1) + (piece(time0, node = 1) | id),
+    data = curran_long,
+    file = "brms_cached_m_pw",
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9)
+)
+summary(m_pw)
+```
+
+#### Linear spline with `brms`
+
+The piecewise model is actually equivalent to the linear spline model, although it is parameterized differently.
+
+```{r}
+# Fit the piecewise growth model (use `splines::bs()`)
+m_lin_spline <- brm(
+    read ~ bs(time0, knots = 1, degree = 1) +
+        (bs(time0, knots = 1, degree = 1) | id),
+    data = curran_long,
+    file = "brms_cahced_m_lin_spline",
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9)
+)
+summary(m_lin_spline)
+```
+
+:::
+
+### Plotting the predicted trajectories
+
+Average predicted trajectory
+
+```{r ave-traj-pw}
+plot_model(m_pw, type = "pred", show.data = TRUE, jitter = 0.05)
+```
+
+Predicted trajectories at the individual level
+
+```{r pred-traj}
+# Add predicted lines to individual trajectories
+broom.mixed::augment(m_pw) %>%
+    # Select only the 24 participants
+    filter(id %in% random_persons) %>%
+    ggplot(aes(x = time0, y = read)) +
+    geom_point() +
+    # Add 95% confidence band
+    geom_ribbon(aes(ymin = .fitted - 2 * .se.fit,
+                    ymax = .fitted + 2 * .se.fit),
+                alpha = 0.1) +
+    geom_line(aes(y = .fitted), col = "blue") +
+    facet_wrap(~ id, ncol = 6)
+```
+
+# Model Comparison
+
+One way to compare different models with the **same outcome variable** and the **same data set** is to use some kind of **information criterion.** The most well-known one is the **Akaike information criterion.** A model with a lower AIC is expected to better predict future observations similar to the current sample. For example,
+
+```{r}
+AIC(m_gca_lme4, m_pw_lme4)
+```
+
+The analog with Bayesian estimation is the **leave-one-out (LOO) criterion:
+
+```{r}
+loo(m_gca, m_pw)
+```
+
+> The model with a lower AIC/LOOIC should be preferred. In this case, the piecewise model is better.
+
+# Time-Invariant Covariates
+
+> Time-invariant covariate = Another way to say a level-2 variable.
+
+You can add `homecog` and its interaction to the model with age as predictors. Now there are two interaction terms: one with the first piece and the other with the second piece.
+
+```{r m_pw_homecog}
+# Add `homecog` and its interaction with growth
+# First, center homecog to 9
+curran_long$homecog9 <- curran_long$homecog - 9
+m_pw_homecog <- brm(
+    read ~ piece(time0, node = 1) * homecog9 +
+      (piece(time0, node = 1) | id),
+    data = curran_long,
+    file = "brms_cached_m_pw_homecog",
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9)
+)
+summary(m_pw_homecog)
+```
+
+```{r interact-plot}
+# `conditional_effects` only works for brms objects
+plot(
+    conditional_effects(
+        m_pw_homecog,
+        effects = "time0:homecog9"
+    ),
+    points = TRUE,
+    point_args = list(width = 0.05, alpha = 0.3)
+)
+```
+
+## Table of Coefficients
+
+```{r tab-models}
+msummary(
+    list(
+        "Compound Symmetry" = m00,
+        "GCA" = m_gca,
+        "Piecewise" = m_pw,
+        "Piecewise + homecog" = m_pw_homecog
+    ),
+    statistic = "[{conf.low}, {conf.high}]",
+    shape = effect + term ~ model,
+    gof_map = c("nobs", "looic"),
+    metrics = "LOOIC"
+)
+```
+
+# Varying Occasions
+
+MLM can handle varying measurement occasions. For example, maybe some students are first measured in September when the semester starts, whereas others are first measured in October or November. How important this difference is depends on the research being studied. For especially infant/early childhood research, one month can already mean a lot of growth, so it is important to consider that.
+
+Instead of using `time`, one can instead model an outcome variable as a function of age, with the `kidage` variable. To use age, however, one may want the intercept to be at a specific age, not age = 0. In the data set, the minimum `age` is `r min(curran_long$kidage)`. Therefore, we can subtract `r min(curran_long$kidage)` from the original `kidage` variable, so that the zero point represent someone at age = `r min(curran_long$kidage)`.
+
+## Quadratic Function
+
+Here is an example:
+
+```{r plot-age}
+# Subtract age by 6
+curran_long <- curran_long %>%
+    mutate(kidagetv = kidage + time * 2,
+           # Compute the age for each time point
+           kidage6tv = kidagetv - 6)
+# Plot the data
+ggplot(curran_long, aes(x = kidage6tv, y = read)) +
+    geom_point(size = 0.5) +
+    # add lines to connect the data for each person
+    geom_line(aes(group = id), alpha = 0.5) +
+    # add a mean trajectory
+    geom_smooth(col = "red", size = 1)
+```
+
+```{r m_age}
+# Fit a quadratic model
+m_agesq <- brm(
+    read ~ kidage6tv + I(kidage6tv^2) + (kidage6tv + I(kidage6tv^2) | id),
+    data = curran_long,
+    file = "brms_cached_m_agesq",
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9)
+)
+summary(m_agesq)
+```
+
+You can then perform the diagnostics and see whether the individual growth shape appears quadratic.
+
+```{r plot-m_agesq}
+random_persons <- sample(unique(curran_long$id), size = 24)
+broom.mixed::augment(m_agesq) %>%
+    # Select only the 24 participants
+    filter(id %in% random_persons) %>%
+    ggplot(aes(x = kidage6tv, y = read)) +
+    geom_point() +
+    # Add 95% confidence band
+    geom_ribbon(aes(ymin = .fitted - 2 * .se.fit,
+                    ymax = .fitted + 2 * .se.fit),
+                alpha = 0.1) +
+    geom_line(aes(y = .fitted), col = "blue") +
+    facet_wrap(~ id, ncol = 6)
+# Plot the predicted trajectories on the same panel
+broom.mixed::augment(m_agesq) %>%
+    ggplot(aes(x = kidage6tv, y = .fitted, group = factor(id))) +
+    geom_line(alpha = 0.5)
+```

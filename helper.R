@@ -17,9 +17,9 @@ add_youtube <- function(src) {
 }
 
 # Use callout box for checkdown questions
-practice_question <- function(qtitle, ...) {
+practice_question <- function(qtitle, ctitle = "Check your learning", ...) {
     cat("::: {.callout-note icon=false}\n")
-    cat("\n## Check your learning\n")
+    cat("\n## ", ctitle, "\n")
     cat("\n", qtitle, "\n")
     check_question(right = right_ans, wrong = wrong_ans, ...)
     cat("\n:::\n")

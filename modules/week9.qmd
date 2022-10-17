@@ -1,0 +1,226 @@
+---
+title: "Week 9: Longitudinal I"
+subtitle: |
+  Models for Longitudinal Data I
+execute:
+  echo: false
+params:
+  slides: "09_longitudinal_analysis_1"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Describe the similarities and differences between longitudinal data and cross-sectional clustered data
+- Perform some basic **attrition analyses**
+- Specify and run **growth curve analysis**
+- Analyze models with **time-invariant covariates** (i.e., lv-2 predictors) and interpret the results
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Snijders & Bosker ch 15 (you can skip 15.1.3 and 15.1.4)
+3. Attend the Tuesday session to learn about `brms`
+4. Attend the Thursday session and participate in the class exercise
+4. Complete Homework 7 (on materials for Week 8)
+5. Additional resources for learning MLM for longitudinal data analysis
+    * [This excellent book by Hoffman (2014)](https://www-taylorfrancis-com.libproxy2.usc.edu/books/9781315744094) (USC SSO required)
+
+# Lecture
+
+## Slides
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Longitudinal Data Analysis
+
+```{r, echo = FALSE}
+add_youtube("bdDrcmktBnE")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In a research study, data were collected for a group of patients on symptoms of eating disorder on a weekly interval across 5 weeks. What type of data is this?",
+    answer = "Panel data", 
+    options = c("Panel data", 
+                "Intensive longitudinal data", 
+                "Cross-sectional data"), 
+    type = "radio"
+)
+```
+
+## Example data
+
+```{r}
+add_youtube("3PDA_ur1sOU")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In the data set, at what level is `homecog`, which is a measure of mother's cognitive stimulation at baseline?",
+    answer = "Level 2", 
+    options = c("Level 1", 
+                "Level 2"), 
+    type = "radio", 
+    alignment = TRUE
+)
+```
+
+### Basic attrition analysis
+
+```{r}
+add_youtube("b2dto5JwRQ8")
+```
+
+::: {.callout-note icon=false}
+
+See the [R code section](/codes/rcode9.qmd#attrition-analyses).
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "In the spaghetti plot, what does the average trend line mean?",
+    answer = "That the sample average reading score increased across time", 
+    options = c("That every child showed an increasing trend", 
+                "That the sample average reading score increased across time", 
+                "That there is no variability in individual trajectories"), 
+    type = "radio"
+)
+```
+
+## Growth Curve Modeling
+
+```{r}
+add_youtube("iT7kzf2gIUs")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In a growth model, what does it mean when $\\tau_1 = 0$?",
+    ctitle = "Think more",
+    answer = "That every participant has the same rate of change", 
+    options = c("That on average, there is no change on the outcome across time", 
+                "That every participant has the same rate of change", 
+                "That every participant has the same outcome score"), 
+    type = "radio"
+)
+```
+
+### Linear growth
+
+:::{.callout-important appearance="simple"}
+
+In the videos, what is labelled as SD~post~ is the Bayesian analog of the standard error.
+
+:::
+
+```{r}
+add_youtube("4xHz4OIPVh8")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What is the advantage of having time to start at 0?",
+    answer = "The intercept corresponds to the predicted score at the first time point", 
+    options = c("The intercept corresponds to the predicted score at the first time point", 
+                "So that $\\tau_1$ will be the SD of the slopes"), 
+    type = "radio"
+)
+```
+
+### Piecewise linear growth
+
+```{r}
+add_youtube("p6TQdUzi1d0")
+```
+
+::: {.callout-note icon=false}
+
+## Practice yourself
+
+What should the coding of phase 1 and phase 2 be if the turning point is set at `time` = 2?
+
+:::
+
+```{r}
+add_youtube("MbDcv05wOrU")
+```
+
+::: {.callout-note icon=false}
+
+## Note
+
+In this example, the turning point was chosen mostly based on the spaghetti plot and was arbitrary. For your research, you should justify your choice.
+
+:::
+
+```{r}
+#| results: asis
+practice_question(
+    "If a piecewise growth model has an AIC of 23745, and a linear growth model has an AIC of 23650, which model should be preferred?",
+    answer = "Linear",
+    options = c("Piecewise", 
+                "Linear"), 
+    type = "radio",
+    alignment = TRUE
+)
+```
+
+## Time-Invariant Covariates 
+
+```{r}
+add_youtube("fI6XJnVQ3pg")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "What does the coefficient for `phase1` mean when the model includes an interaction between `phase1` and `homecog9`?",
+    ctitle = "Think more",
+    answer = "The average slope from time 0 to time 1 for kids with homecog = 9",
+    options = c("The average slope from time 0 to time 1",
+                "The average slope from time 0 to time 1 for kids with homecog = 9",
+                "The average slope from time 0 to time 1, holding constant homecog"),
+    type = "radio"
+)
+```
+
+## Varying Occasions
+
+::: {.callout-note icon=false}
+
+Instead of using `time` as the duration since a particular point in history (e.g., when the study started), one can use other ways of quantifying time, such as the duration since one is born (i.e., chronological age). See R code.
+
+:::
+
+```{r}
+add_youtube("XsbxN2m_si4")
+```
+
+:::{.callout-important appearance="simple"}
+
+In the video below, recorded in 2021, I used the R package `glmmTMB` for frequentist analyses. The results and interpretations using `brms` are similar.
+
+:::
+
+```{r}
+add_youtube("PYyMVi292DM")
+```
+
+:::
