@@ -2,7 +2,7 @@
 title: "HW 9 Template"
 author: "Mark Lai"
 date: "`r Sys.Date()`"
-output: github_document
+output: pdf_document
 ---
 
 ```{r setup, include = FALSE}
@@ -34,16 +34,16 @@ theme_set(theme_classic() +
     theme(panel.grid.major.y = element_line(color = "grey92")))
 ```
 
-# Research Question
+# Revised Prospectus
 
-> Is income related to self-report happiness within a country?
+You can separate your prospectus and preliminary analysis in different files, if needed. Please Include:
 
-# Variables
+- Sufficient background to understand your research
+- Research questions clearly defined
+- A description of the nesting structure of your data
+- Your plan of data analysis
 
-1. `CountryID`: Country ID
-2. `country`: Country's name
-3. `income`: Income level (0-_least income_ to 9-_most income_)
-4. `happy`: Feel happy (1-_not happy_ to 4-_very happy_)
+# Preliminary Analysis
 
 ## Import Data
 
@@ -58,26 +58,30 @@ happy_dat <- happy_dat %>%
 
 ## Variable Summary
 
+- `CountryID`: Country ID
+- `country`: Country's name
+- `income`: Income level (0-_least income_ to 9-_most income_)
+- `happy`: Feel happy (1-_not happy_ to 4-_very happy_)
+
 ```{r}
 # By Country
-datasummary(country ~ (income + happy) * (N + Mean + SD + Histogram),
+datasummary(country ~ (income + happy) * (N + Mean + SD),
             data = happy_dat)
 ```
 
-## Preliminary Analysis
-
-### Intraclass Correlation
+## Intraclass Correlation
 
 ```{r}
 m0 <- lmer(happy ~ (1 | country), data = happy_dat)
 performance::icc(m0)
 ```
 
-### Model
+## Model
 
 Level 1:
 
 $$\text{happy}_{ij} = \beta_{0j} + \beta_{1j} \text{income}_{ij} + e_{ij}$$
+
 Level 2:
 
 $$
@@ -87,10 +91,6 @@ $$
   \end{aligned}
 $$
 
-### Analysis
-
-We used 4 chains, each with 4,000 iterations (first 2,000 as warm-ups). 
-
 ```{r}
 m1 <- lmer(happy ~ income + income_cm + (income | country),
            data = happy_dat)
@@ -98,12 +98,18 @@ m1 <- lmer(happy ~ income + income_cm + (income | country),
 
 ## Results
 
-```{r table-fm}
+```{r table-m1}
 msummary(m1,
          estimate = c("{estimate} [{conf.low}, {conf.high}]"),
          statistic = NULL,  # suppress the extra rows for SEs
          shape = effect + term ~ model,
-         title = "Model coefficients")
+         title = "Table 1: Model coefficients")
+```
+
+```{r fig-m1}
+plot_model(m1, type = "pred", pred.type = "re",
+           terms = "income", show.data = TRUE,
+           jitter = 0.1, dot.size = 0.2)
 ```
 
 ```{r, include = FALSE}
@@ -124,4 +130,4 @@ boo_r2 <- bootstrap_mer(m1, MuMIn::r.squaredGLMM, nsim = 1999,
                         type = "residual")
 ```
 
-Table\ \@ref(tab:table-fm) shows the fixed-effect coefficients. We found evidence for the positive association, averaged across countries, between income and happiness at the individual level, $\gamma_{10}$ = `r print_coef("income")`. The contextual effect was not significant, $\gamma_{01}$ = `r print_coef("income_cm")`. The marginal $R^2$ (Nakagawa et al., 2017) for the model was estimated to be `r comma(r2_m1[1], 2)`, 95% bootstrap CI [`r paste0(round(boot.ci(boo_r2, index = 1, type = "perc")$percent[4:5], 2), collapse = ", ")`].
+Table 1 shows the fixed-effect coefficients. We found evidence for the positive association, averaged across countries, between income and happiness at the individual level, $\gamma_{10}$ = `r print_coef("income")`. The contextual effect was not significant, $\gamma_{01}$ = `r print_coef("income_cm")` (see the Figure). The marginal $R^2$ (Nakagawa et al., 2017) for the model was estimated to be `r comma(r2_m1[1], 2)`, 95% bootstrap CI [`r paste0(round(boot.ci(boo_r2, index = 1, type = "perc")$percent[4:5], 2), collapse = ", ")`].
