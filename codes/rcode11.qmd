@@ -1,0 +1,20 @@
+---
+title: "Week 11 (R): Causal Inference"
+execute:
+  echo: false
+format:
+  html:
+    code-tools:
+      source: week11-causal-inference.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week11-causal-inference"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+```
+
+{{< include _rcode-common.qmd >}}

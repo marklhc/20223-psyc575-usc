@@ -1,0 +1,496 @@
+---
+title: "Multilevel Causal Inference"
+subtitle: "PSYC 575"
+author: "Mark Lai"
+institute: "University of Southern California"
+date: "2022/10/28 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      ratio: '16:9'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+params:
+  for_class: false
+---
+
+```{r, child = "slide_settings.RMarkdown"}
+```
+
+# Week Learning Objectives
+
+- Define **causal effect** from a causal inference framework
+
+- Describe what a confounder is using a **directed acyclic graph (DAG)**
+
+- Explain how **randomized experiments** control for confounders
+
+- Explain when and how **statistical adjustment** can potentially remove confounding
+
+- Explain how including **cluster means** can remove confounders at level 2
+
+---
+
+# Reading
+
+### Rhoads & Li (2022) Chapter: Causal Inference in Multilevel Settings
+
+### Feller & Gelman (2015). Hierarchical Models for Causal Effects.
+
+---
+
+# Causal Inference
+
+.center[
+
+### When and how can we determine the causal effect of $X$ on $Y$?
+
+]
+
+--
+
+E.g., Sector on Achievement coefficient with HSB data
+
+```{r import_sav, message = FALSE}
+library(dplyr)
+# Read in the data (pay attention to the directory)
+hsball <- haven::read_sav(here::here("data_files", "hsball.sav")) |>
+    mutate(sector = factor(sector))
+hsb_po <- hsball |>
+    group_by(sector) |>
+    slice(1:6) |>
+    ungroup()
+```
+
+```{r, output.lines = c(2:4, 17:20)}
+library(lme4)
+lmer(mathach ~ sector + (1 | id), data = hsball) |>
+    summary()
+```
+
+- The predicted difference in achievement between students in Catholic (`sector` = 1) vs. public schools (`sector` = 0)
+
+--
+
+- $\hat Y \mid X = 1 - \hat Y \mid X = 0$
+
+---
+
+# Causal Effect
+
+> What is the **causal** effect of sector on achievement?
+
+Two interpretations:
+
+--
+
+- Predicting an intervention
+
+    * E.g., what would student $i$'s achievement be if they move to a different type of school?
+
+--
+
+- Counterfactual
+
+    * E.g., what would student $i$'s achievement have been if they had attended a different type of school?
+
+---
+
+# Causal Inference Frameworks
+
+### Potential Outcome Framework (Holland, 1986<sup>1</sup>; Rubin, 1974<sup>2</sup>)
+
+* $Y_{ij}(1) - Y_{ij}(0)$
+
+### Structural Causal Model (Pearl, 2000; 2009<sup>3</sup>)
+
+* $Y_{ij} \mid \mathrm{do}(X = 1) - Y_{ij} \mid \mathrm{do}(X = 0)$
+
+.footnote[
+
+[1] https://doi.org/10.1080/01621459.1986.10478354
+
+[2] https://doi.org/10.1037/h0037350
+
+[3] Pearl, J. (2009). Causality (2nd ed.). 
+
+]
+
+---
+
+# Fundamental Problem of Causal Inference
+
+```{r}
+hsb_po |>
+    mutate(`mathach (sector = 0)` = if_else(sector == 0, mathach, NA_real_),
+           `mathach (sector = 1)` = if_else(sector == 1, mathach, NA_real_)) |>
+    select(id, minority, female, ses, sector,
+           `mathach (sector = 0)`, `mathach (sector = 1)`) |>
+    knitr::kable()
+```
+
+---
+
+## Maybe `sector` makes no difference . . . 
+
+```{r}
+hsb_po |>
+    mutate(`mathach (sector = 0)` = mathach,
+           `mathach (sector = 1)` = mathach) |>
+    select(id, minority, female, ses, sector,
+           `mathach (sector = 0)`, `mathach (sector = 1)`) |>
+    mutate(
+        `causal effect` = `mathach (sector = 1)` - `mathach (sector = 0)`) |>
+    knitr::kable()
+```
+
+---
+
+# Confounding
+
+A confounder U is depicted in the following *directed acyclic graph (DAG)*
+
+```{r, out.width = "50%", fig.width = 5}
+library(dagitty)
+library(ggdag)
+dag2 <- dagitty(
+    "dag{
+      X -> Y; U -> X; U -> Y
+      U [unobserved]
+    }"
+)
+coordinates(dag2) <- list(x = c(X = 0, U = 1, Y = 2),
+                          y = c(X = 0, U = 1, Y = 0))
+# Plot
+ggdag(dag2) + theme_dag()
+```
+
+U biases the observed association between X and Y from the causal effect of X $\rightarrow$ Y
+
+---
+
+E.g., consider `minority` and `ses` as potential confounders
+
+.pull-left[
+
+### Proportion minority across sectors
+
+```{r}
+hsball |>
+    group_by(sector) |>
+    summarise(minority = mean(minority == 1)) |>
+    knitr::kable()
+```
+
+]
+
+.pull-right[
+
+### Distribution of `ses` across sectors
+
+```{r, out.width = "95%", fig.width = 6 * .95 / .7 / 2}
+library(ggplot2)
+ggplot(hsball, aes(x = ses)) +
+    geom_histogram() +
+    facet_wrap(~ sector, ncol = 1)
+```
+
+]
+
+---
+
+# Obtaining Causal Effects
+
+### Randomization
+
+### Unconfounding
+
+---
+class: inverse, middle, center
+
+# Randomized Experiments
+
+---
+
+# Why (and When) Does Randomized Experiment Work?
+
+Remove all confounds (probabilistically)
+
+- Intervention groups are different only by chance
+
+```{r, out.width = "60%", fig.width = 6 * .6 / .7}
+dag3 <- dagitty(
+    "dag{
+      X -> Y; U1 -> Y; U2 -> Y
+      U1 [unobserved]
+      U2 [unobserved]
+    }"
+)
+coordinates(dag3) <- list(x = c(X = 0, U1 = 0.8, U2 = 1.2, Y = 2),
+                          y = c(X = 0, U1 = 1, U2 = 1, Y = 0))
+# Plot
+ggdag(dag3) + theme_dag()
+```
+
+---
+
+### Average Treatment Effects
+
+We still don't know the counterfactuals, but
+- the distribution of $Y(0)$ should be the same across the "intervention" groups (same for $Y(1)$)
+
+```{r}
+hsb_po |>
+    mutate(`mathach (sector = 0)` = if_else(sector == 0, mathach, NA_real_),
+           `mathach (sector = 1)` = if_else(sector == 1, mathach, NA_real_)) |>
+    select(id, minority, female, ses, sector,
+           `mathach (sector = 0)`, `mathach (sector = 1)`) |>
+    knitr::kable()
+```
+
+---
+class: inverse, middle, center
+
+# Unconfounding: Statistical Adjustment
+
+---
+
+# Why Do We Include Covariates?
+
+> Statistical control requires causal justification (Wysocki et al., 2022)<sup>1</sup>
+
+.pull-left[
+
+One should adjust for
+
+- Confounders
+- Variables blocking confounding paths
+
+]
+
+.pull-right[
+
+```{r, out.width = "100%"}
+dag4 <- dagitty(
+    "dag{
+      X -> Y; W1 -> X; U -> W2; W2 -> X; W1 -> Y; U -> Y
+    }"
+)
+latents(dag4) <- "U"
+coordinates(dag4) <- list(x = c(X = 0, W1 = 0.66, U = 1.32, W2 = 0.66, Y = 2),
+                          y = c(X = 0, W1 = 1, U = 1, W2 = 0.5, Y = 0))
+ggdag(dag4) + theme_dag()
+```
+
+]
+
+.footnote[
+
+[1] https://doi.org/10.1177/25152459221095823
+
+]
+
+---
+
+# Statistical Adjustment/Control
+
+.pull-left[
+
+```{r, out.width = "100%", fig.width = 6 * .5 / .7}
+ggplot(hsball, aes(x = sector, y = mathach)) +
+    geom_boxplot()
+```
+
+]
+
+.pull-right[
+
+```{r, out.width = "100%", fig.width = 6 * .5 / .7}
+ggplot(hsball, aes(x = factor(ntile(ses, 4)), y = mathach)) +
+    geom_boxplot(aes(fill = sector)) +
+    labs(x = "SES (quartiles)")
+```
+
+]
+
+---
+
+# Causal Inference With Observational Data
+
+- When **all** confounding paths between $X$ and $Y$ are successfully adjusted
+
+- Depends on **causal assumptions**
+
+- When some confounders are not measured, estimated effects are biased
+
+- When wrong variables are adjusted, estimated effects are biased
+
+---
+
+# Confounder vs. Mediator
+
+Do not blindly adjust/control for any variable!
+
+.pull-left[
+
+- Mediator
+
+```{r, out.width = "100%", fig.width = 5}
+dag5 <- dagitty(
+    "dag{
+      X -> Y; X -> M; M -> Y
+    }"
+)
+coordinates(dag5) <- list(x = c(X = 0, M = 1, Y = 2),
+                          y = c(X = 0, M = 1, Y = 0))
+# Plot
+ggdag(dag5) + theme_dag()
+```
+
+]
+
+.pull-right[
+
+### Example
+
+Vaccine $\rightarrow$ Antibody $\rightarrow$ Symptom Severity
+
+If adjust for Antibody, may falsely conclude vaccine has no effect
+
+]
+
+---
+
+# So, What to Adjust?
+
+General rule of thumb: if interested in the total effect of $X$, do not adjust for variables that are potential consequences of $X$
+
+Draw a DAG to identify variables on the confounding path
+
+- Preferably, you have identified such variables in the planning stage, so that you can collect data on them
+
+---
+class: inverse, middle, center
+
+# Using Multilevel Models for Causal Inference
+
+---
+
+# Student Admissions at UC Berkeley (1973)
+
+.font70[
+
+```{r}
+library(tidyr)
+berkeley_admit <- UCBAdmissions %>%
+  as.data.frame() %>%
+  group_by(Gender, Dept) %>%
+  mutate(App = sum(Freq)) %>%
+  filter(Admit == "Admitted") %>%
+  select(Gender, Dept, Admit = Freq, App)
+tab <- UCBAdmissions %>%
+  as.data.frame() %>%
+  group_by(Gender, Dept) %>%
+  mutate(App = sum(Freq)) %>%
+  filter(Admit == "Admitted") %>%
+  ungroup() %>%
+  select(Gender, Dept, Admit = Freq, App) %>%
+  pivot_wider(names_from = Gender,
+              values_from = c(App, Admit))
+total_row <- data.frame(
+  Dept = "Total",
+  App_Male = sum(tab$App_Male),
+  Admit_Male = sum(tab$Admit_Male),
+  App_Female = sum(tab$App_Female),
+  Admit_Female = sum(tab$Admit_Female)
+)
+bind_rows(tab, total_row) %>%
+  mutate(Percent_Male = Admit_Male / App_Male * 100,
+         Percent_Female = Admit_Female / App_Female * 100) %>%
+  select(1, 2, 4, 6, 3, 5, 7) %>%
+  knitr::kable()
+```
+
+]
+
+---
+
+# Without Adjustment
+
+```{r, echo = TRUE, output.lines = 10:15}
+m1 <- glm(cbind(Admit, App - Admit) ~ Gender,
+  data = berkeley_admit,
+  family = binomial("logit")
+)
+summary(m1)
+```
+
+---
+
+```{r}
+dag8 <- dagitty("dag{
+  G -> A; G -> D; D -> A; U -> D; U -> A
+}")
+coordinates(dag8) <- list(x = c(G = 0, D = 1, A = 2, U = 2),
+                          y = c(G = 0, D = 1, A = 0, U = 1))
+# Plot
+ggdag(dag8) + theme_dag()
+```
+
+---
+
+```{r, echo = TRUE, output.lines = 14:24}
+berkeley_admit <- berkeley_admit |>
+    group_by(Dept) |>
+    mutate(Gender_cm = App[2] / sum(App))
+m2 <- glmer(cbind(Admit, App - Admit) ~ 
+                Gender + Gender_cm + (Gender | Dept),
+  data = berkeley_admit,
+  family = binomial("logit")
+)
+summary(m2)
+```
+
+---
+
+# The Role of Cluster Means
+
+For level-1 $X$,
+
+including cluster means of $X$ adjusts for differences in $X$ due to cluster-level confounders
+
+```{r, out.width = "60%", fig.width = 6 * .6 / .7}
+dag6 <- dagitty(
+    "dag{
+      U1 -> Xcm; U1 -> Y
+      U2 -> X; U2 -> Y
+      Xcm -> X; Xcm -> Y
+      X -> Y
+    }"
+)
+coordinates(dag6) <- list(x = c(X = 0, Xcm = 0, U1 = 1, U2 = 1, Y = 2),
+                          y = c(X = 0, Xcm = 0.8, U1 = 1, U2 = 0.3, Y = 0))
+# Plot
+ggdag(dag6) + theme_dag()
+```
+
+---
+
+# Some Other Useful Tools
+
+- Mediation analysis
+    * Whether $X$ has an effect on $Y$ through $M$
+    * Check out the `mediation` package
+
+- Propensity score
+    * Efficiently balancing multiple covariates
+
+- Instrumental variables (IVs)
+    * Variables inducing change in $X$, but should otherwise have no effects on $Y$
+    * E.g., the `plm` package can perform IV estimation using the so-called Hausman-Taylor estimator
+    
+- Causal discovery tools
+    * E.g., `pcalg` package

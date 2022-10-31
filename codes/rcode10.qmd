@@ -1,0 +1,21 @@
+---
+title: "Week 10 (R): Longitudinal II"
+execute:
+  echo: false
+format:
+  html:
+    code-tools:
+      source: week10-longitudinal-2.Rmd
+      toggle: false
+      caption: Download Rmd
+params:
+  rmd_file: "week10-longitudinal-2"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+options(mc.cores = 2)
+```
+
+{{< include _rcode-common.qmd >}}

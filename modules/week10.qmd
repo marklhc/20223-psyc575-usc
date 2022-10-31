@@ -1,0 +1,177 @@
+---
+title: "Week 10: Longitudinal II"
+subtitle: |
+  Models for Longitudinal Data II
+execute:
+  echo: false
+params:
+  slides: "10_longitudinal_analysis_2"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Specify models with alternative error covariance structures
+- Describe the difference between analyzing trends vs. analyzing **fluctuations** with longitudinal data
+- Run analyses with **time-varying predictors** (i.e., level-1 predictors)
+- Interpret and plot results
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * [Hoffman (2014) ch 4.1](https://www-taylorfrancis-com.libproxy1.usc.edu/books/9781315744094/chapters/10.4324/9781315744094-12) (USC SSO required)
+    * [Hoffman (2014) ch 8](https://www-taylorfrancis-com.libproxy1.usc.edu/books/9781315744094/chapters/10.4324/9781315744094-17) (USC SSO required)
+3. Attend the Tuesday session to learn about `brms`
+4. Attend the Thursday session and participate in the class exercise
+5. Complete Homework 8
+6. (Optional) Read the bonus R code on the generalized estimating equations (GEE) method
+    * Additional reference: <https://journals.sagepub.com/doi/abs/10.3102/10769986211017480>
+
+# Lecture
+
+## Slides
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+:::{.callout-important appearance="simple"}
+
+In the videos for this week, you will see that I used the R package `glmmTMB` for frequentist analyses for fitting models with autoregressive covariance structures. These are useful for getting quick results, but they may sometimes run into convergence issues. Using `brms` is generally more stable. 
+
+:::
+
+::: {.panel-tabset}
+
+## Longitudinal Data Analysis II
+
+```{r}
+add_youtube("k5WyosL97B0")
+```
+
+## Temporal Covariance/Correlation
+
+```{r}
+add_youtube("pzsL1y5XsQ0")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "Assume that the temporal correlation decreases with a longer time gap. A researcher collects data at baseline (Time 1), 3-month follow-up (Time 2), and then 5-month follow-up (Time 3). Which correlation should be strongest?",
+    answer = "Between Time 2 and Time 3",
+    options = c("Between Time 1 and Time 2",
+                "Between Time 2 and Time 3",
+                "Between Time 1 and Time 3"),
+    type = "radio"
+)
+```
+
+### Covariance Structure in MLM
+
+OLS and RI-MLM/RM-ANOVA
+
+```{r}
+add_youtube("UKxumumURd0")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "The random-intercept model/repeated-measures ANOVA assumes a specific temporal covariance structure. What is that structure called?",
+    answer = "Compound Symmetry",
+    options = c("Independence",
+                "Autoregressive",
+                "Autoregressive and Moving Average",
+                "Compound Symmetry"),
+    type = "radio"
+)
+```
+
+Random Slopes
+
+```{r}
+add_youtube("UiBMcbNGbHk")
+```
+
+Autoregressive(1) error structure
+
+```{r}
+add_youtube("Z5ZghnvZkYI")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In an AR(1) covariance structure, what is the implied correlation between Time 2 and Time 4, if $\\rho = .4$?",
+    answer = ".16",
+    options = c(".4",
+                ".2",
+                ".16",
+                ".064"),
+    type = "radio", 
+    alignment = TRUE
+)
+```
+
+## Analyzing Dynamics
+
+```{r}
+add_youtube("xW_84TYK85g?start=105")
+```
+
+```{r}
+add_youtube("F-NNPPAuPWE")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "When analyzing a conversation between a couple, a researcher is interested in whether a person follows up the partner's complaints with positive or negative behaviors. Is this an example of studying trends or fluctuations?",
+    answer = "Fluctuations", 
+    options = c("Trends", 
+                "Fluctuations"), 
+    type = "radio", 
+    alignment = TRUE
+)
+```
+
+## Examples
+
+### Model 1
+
+```{r}
+add_youtube("mDdyowlEUic")
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "In the model discussed in the video, what is the interpretation of the contextual effect of `mood1`?",
+    answer = "The predicted difference in symptoms between two individuals with 1 unit difference in average negative mood on a day when both individuals have the same daily mood level", 
+    options = c("The predicted difference in average symptoms between two individuals with 1 unit difference in average negative mood", 
+                "The predicted difference in symptoms for an individual across two days with 1 unit difference in mood", 
+                "The predicted difference in symptoms between two individuals with 1 unit difference in average negative mood on a day when both individuals have the same daily mood level"), 
+    type = "radio"
+)
+```
+
+### Model 2
+
+```{r}
+add_youtube("bbNaNi2hUXQ")
+```
+
+::: {.callout-note icon=false}
+
+For the coefficients of `stressor` and `stressor_pm` in the above model, the coefficients are ones adjusting for the other predictors in the model (e.g., `mood1_pm`, `mood1_pmc`, `women`, and their interactions). 
+
+:::
+
+:::

@@ -1,0 +1,224 @@
+---
+title: "Week 11: Causal Inference"
+subtitle: "Multilevel Causal Inference"
+execute:
+  echo: false
+params:
+  slides: "11_causal_inference"
+---
+
+```{r}
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
+```
+
+# Week Learning Objectives
+
+By the end of this module, you will be able to 
+
+- Define **causal effect** from a causal inference framework
+- Describe what a confounder is using a **directed acyclic graph (DAG)**
+- Explain how **randomized experiments** control for confounders
+- Explain when and how **statistical adjustment** can potentially remove confounding
+- Explain how including **cluster means** can remove confounders at level 2
+
+## Task Lists
+
+1. Review the resources (lecture videos and slides)
+2. Complete the assigned readings
+    * Rhoads & Li (2022) (to be shared on Slack)
+    * [Feller & Gelman (2015)](http://www.stat.columbia.edu/~gelman/research/published/HierarchicalCausal.pdf)
+3. Attend the Tuesday session on last week's exercise (cross-lagged models)
+4. Attend the Thursday session and participate in the class exercise
+5. Complete Homework 9
+
+# Lecture
+
+## Slides
+
+```{r}
+xaringanExtra::embed_xaringan(file.path("/slides", paste0(params$slides, ".html")))
+```
+
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
+
+::: {.panel-tabset}
+
+## Overview
+
+{{< video https://youtu.be/1fixYnYj6Vk >}}
+
+## Causal Inference Frameworks
+
+{{< video https://youtu.be/JEtIswjQwm4 >}}
+
+```{r}
+#| results: asis
+practice_question(
+    "In a study of the association between chocolate consumption and number of Nobel laureates, what would be considered a causal effect?",
+    answer = "The change in the number of Nobel laureates if everyone in the US ate more chocolate while keeping everything else constant",
+    options = c("The difference in the number of Nobel laureates between countries with high and low per capita chocolate consumptions",
+                "The difference in the number of Nobel laureates between people, in the same age group, with high and low average chocolate consumptions",
+                "The change in the number of Nobel laureates if everyone in the US ate more chocolate while keeping everything else constant"),
+    type = "radio"
+)
+```
+
+```{r}
+#| results: asis
+practice_question(
+    "A potential outcome for a person i is",
+    answer = "The outcome value the same person would have obtained if they were in a particular treatment condition",
+    options = c("The outcome value the same person would have obtained if they were in a particular treatment condition",
+                "The average outcome value of everyone similar to person i",
+                "What person i could have obtained if the treatment is made stronger"),
+    type = "radio"
+)
+```
+
+## Confounding
+
+{{< video https://youtu.be/jrShzRJ10dM >}}
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+```{r, message = FALSE}
+library(dagitty)
+library(ggdag)
+dag1 <- dagitty(
+    "dag{
+      X -> Y; U2 -> X; U2 -> Y
+      X -> U1; U1 -> Y
+      U3 -> X; U4 -> Y
+    }"
+)
+coordinates(dag1) <- list(x = c(X = 0, U1 = 0, U2 = 0.5, U3 = 1, U4 = 1.5, Y = 2),
+                          y = c(X = 0, U1 = 1, U2 = 1, U3 = 1, U4 = 1, Y = 0))
+# Plot
+ggdag(dag1) + theme_dag()
+```
+
+In the graph above, which variable is a confounder?
+
+```{r}
+#| results: asis
+check_question("U2", 
+               options = c("U1", "U2", "U3", "U4"), 
+               type = "radio", right = right_ans, wrong = wrong_ans, 
+               alignment = TRUE)
+```
+
+:::
+
+{{< video https://youtu.be/J47ppYZ-Tdc >}}
+
+```{r}
+#| results: asis
+practice_question(
+    "In an experiment, why do we only get an average treatment effect (ATE), instead of causal effects of individuals?",
+    answer = "Because we only observe one potential outcome for each individual",
+    options = c("Because the average is more accurate than individual scores",
+                "Because we only observe one potential outcome for each individual",
+                "Because the counterfactual score of each person in the treatment group is the same as the mean of the control group"),
+    type = "radio"
+)
+```
+
+## Statistical Adjustment
+
+{{< video https://youtu.be/HNvCedHr0nU >}}
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+```{r}
+set.seed(2134)
+x <- runif(100)
+e <- rnorm(100)
+e <- (e - mean(e)) / sd(e) * 0.5
+m <- dplyr::ntile(x, 5)
+y <- 0.5 + 0.5 * x + m + e
+library(ggplot2)
+tibble::tibble(y, x, m) |>
+    ggplot(aes(x = x, y = y, col = factor(m))) +
+    geom_point() +
+    geom_smooth(aes(group = 1), method = "lm", se = FALSE) +
+    geom_smooth(method = "lm", se = FALSE) +
+    labs(col = "m")
+```
+
+Which of the following is closest to the effect of x on y, adjusting for m?
+
+```{r}
+#| results: asis
+check_question("0", 
+               options = c("0", "0.5", "-1"), 
+               type = "radio", right = right_ans, wrong = wrong_ans, 
+               alignment = TRUE)
+```
+
+:::
+
+{{< video https://youtu.be/-0HJwm1Mww8 >}}
+
+::: {.callout-note icon=false}
+
+## Check your learning
+
+```{r, message = FALSE}
+library(dagitty)
+library(ggdag)
+dag1 <- dagitty(
+    "dag{
+      X -> Y; U2 -> X; U2 -> Y
+      X -> U1; U1 -> Y
+      U3 -> X; U4 -> Y
+    }"
+)
+coordinates(dag1) <- list(x = c(X = 0, U1 = 0, U2 = 0.5, U3 = 1, U4 = 1.5, Y = 2),
+                          y = c(X = 0, U1 = 1, U2 = 1, U3 = 1, U4 = 1, Y = 0))
+# Plot
+ggdag(dag1) + theme_dag()
+```
+
+In the graph above, which variable is a mediator?
+
+```{r}
+#| results: asis
+check_question("U1", 
+               options = c("U1", "U2", "U3", "U4"), 
+               type = "radio", right = right_ans, wrong = wrong_ans, 
+               alignment = TRUE)
+```
+
+:::
+
+## Multilevel Causal Inference
+
+### Berkeley admission example
+
+{{< video https://youtu.be/5hGh8ZVMRsI >}}
+
+{{< video https://youtu.be/7s4yuSARTuQ >}}
+
+### The role of cluster means
+
+{{< video https://youtu.be/Jc7xFgRzhEk >}}
+
+```{r}
+#| results: asis
+practice_question(
+    "From a causal inference perspective, why is including the cluster mean beneficial?",
+    answer = "Because confounding variables at the cluster level have effects on the cluster mean, which is held constant by including in the model",
+    options = c("Because confounding variables at the cluster level have effects on the cluster mean, which is held constant by including in the model",
+                "Because the cluster mean is a mediator variable",
+                "Because the between-cluster and within-cluster effects can be decomposed"),
+    type = "radio"
+)
+```
+
+:::

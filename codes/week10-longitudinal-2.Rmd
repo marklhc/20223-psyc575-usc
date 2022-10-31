@@ -1,0 +1,556 @@
+---
+title: "Longitudinal Data Analysis in R (Part 2)"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">#")
+```
+
+## Load Packages and Import Data
+
+```{r load-pkg, message = FALSE}
+# To install a package, run the following ONCE (and only once on your computer)
+# install.packages("psych")
+library(here)  # makes reading data more consistent
+library(tidyverse)  # for data manipulation and plotting
+library(haven)  # for importing SPSS/SAS/Stata data
+library(lme4)  # for multilevel analysis
+library(glmmTMB)  # for frequentist longitudinal MLM
+library(brms)  # for Bayesian longitudinal MLM
+library(sjPlot)  # for plotting
+library(modelsummary)  # for making tables
+```
+
+```{r curran_long, message = FALSE}
+# Read in the data from GitHub (need Internet access)
+curran_wide <- read_sav("https://github.com/MultiLevelAnalysis/Datasets-third-edition-Multilevel-book/raw/master/chapter%205/Curran/CurranData.sav")
+# Make id a factor
+curran_wide  # print the data
+# Using the new `tidyr::pivot_longer()` function
+curran_long <- curran_wide %>%
+    pivot_longer(
+        c(anti1:anti4, read1:read4),  # variables that are repeated measures
+        # Convert 8 columns to 3: 2 columns each for anti/read (.value), and
+        # one column for time
+        names_to = c(".value", "time"),
+        # Extract the names "anti"/"read" from the names of the variables for the
+        # value columns, and then the number to the "time" column
+        names_pattern = "(anti|read)([1-4])",
+        # Convert the "time" column to integers
+        names_transform = list(time = as.integer)
+    ) %>%
+    mutate(time0 = time - 1)
+```
+
+# Covariance Structure
+
+Observed covariance matrix across time
+
+```{r obs-cov}
+curran_wide %>%
+    select(read1:read4) %>%
+    cov(use = "pair") %>%
+    print(digits = 2)
+```
+
+Implied covariance based on OLS (independence)
+
+```{r ols-cov}
+m0_ols <- lm(read ~ factor(time), data = curran_long)
+diag(sigma(m0_ols), nrow = 4) %>%
+    round(digits = 2)
+```
+
+Implied covariance based on random intercept MLM (compound symmetry)
+
+::: {.panel-tabset}
+
+#### `brms`
+
+```{r}
+m0_ri <- brm(read ~ 0 + factor(time) + (1 | id),
+    data = curran_long,
+    file = "brms_cached_m_cs"
+)
+vc_m0_ri <- VarCorr(m0_ri)
+(matrix(vc_m0_ri$id$sd[1, "Estimate"]^2, nrow = 4, ncol = 4) +
+    diag(vc_m0_ri$residual__$sd[1, "Estimate"]^2, nrow = 4)) %>%
+    print(digits = 2)
+```
+
+#### `glmmTMB`
+
+```{r mlm-cov}
+m0_ri_tmb <- glmmTMB(read ~ factor(time) + (1 | id),
+  data = curran_long,
+  REML = TRUE
+)
+vc_m0_ri_tmb <- VarCorr(m0_ri_tmb)
+(matrix(vc_m0_ri_tmb[[1]]$id[1, 1], nrow = 4, ncol = 4) +
+  diag(attr(vc_m0_ri_tmb[[1]], "sc")^2, nrow = 4)) %>%
+  print(digits = 2)
+```
+
+:::
+
+Implied covariance based on random-slope MLM (piecewise growth)
+
+::: {.panel-tabset}
+
+#### `brms`
+
+```{r}
+piece <- function(x, node) {
+    cbind(pmin(x, node),
+          pmax(x - node, 0))
+}
+# Fit the piecewise growth model
+m_pw <- brm(
+    read ~ piece(time0, node = 1) + (piece(time0, node = 1) | id),
+    data = curran_long,
+    file = "brms_cached_m_pw",
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9)
+)
+vc_mpw <- VarCorr(m_pw)
+# Covariance
+(cbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) %*%
+    vc_mpw$id$cov[, "Estimate", ] %*%
+    rbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) +
+    diag(vc_mpw$residual__$sd[1, "Estimate"]^2, nrow = 4)) %>%
+    print(digits = 2)
+```
+
+#### `glmmTMB`
+
+```{r pw-cov}
+# Fit the piecewise growth model
+m_pw_tmb <- glmmTMB(
+    read ~ piece(time0, node = 1) +
+        (piece(time0, node = 1) | id),
+    data = curran_long, REML = TRUE,
+    # The default optimizer did not converge; try optim
+    control = glmmTMBControl(
+      optimizer = optim,
+      optArgs = list(method = "BFGS")
+    )
+)
+vc_mpw_tmb <- VarCorr(m_pw_tmb)
+# Covariance
+(cbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) %*%
+    vc_mpw_tmb[[1]]$id[1:3, 1:3] %*%
+    rbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) +
+    diag(attr(vc_mpw_tmb[[1]], "sc")^2, nrow = 4)) %>%
+    print(digits = 2)
+```
+
+:::
+
+## Autoregressive(1) Error Structure
+
+From the piecewise model, add the AR(1) error structure:
+
+::: {.panel-tabset}
+
+#### `brms`
+
+```{r}
+# Add the AR(1) structure
+m_pw_ar1 <- brm(
+    read ~ piece(time0, node = 1) + (piece(time0, node = 1) | id) +
+        ar(time = time0, gr = id),
+    data = curran_long,
+    # increase adapt_delta as there was a divergent transition warning
+    control = list(adapt_delta = 0.9),
+    # Also need more iterations
+    iter = 4000,
+    file = "brms_cached_m_pw_ar1"
+)
+vc_mpw_ar1 <- VarCorr(m_pw_ar1)
+# Extract also AR estimate
+est_ar <- posterior_summary(m_pw_ar1, variable = "ar[1]")[, "Estimate"]
+# Covariance
+(cbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) %*%
+    vc_mpw_ar1$id$cov[, "Estimate", ] %*%
+    rbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) +
+    vc_mpw_ar1$residual__$sd[1, "Estimate"] ^ 2 ^
+        (abs(outer(0:3, Y = 0:3, FUN = "-")) + 1)) %>%
+    print(digits = 2)
+```
+
+#### `glmmTMB`
+
+```{r ar1-cov}
+# Add the AR(1) structure
+m_pw_ar1_tmb <- glmmTMB(
+    read ~ piece(time0, node = 1) + (piece(time0, node = 1) | id) +
+        ar1(0 + factor(time) | id),
+    dispformula = ~0,
+    data = curran_long, REML = TRUE,
+    # The default optimizer did not converge; try optim
+    control = glmmTMBControl(
+        optimizer = optim,
+        optArgs = list(method = "BFGS")
+    )
+)
+vc_mpw_ar1_tmb <- VarCorr(m_pw_ar1_tmb)
+# Covariance
+(cbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) %*%
+    vc_mpw_ar1_tmb[[1]]$id[1:3, 1:3] %*%
+    rbind(1, c(0, 1, 1, 1), c(0, 0, 1, 2)) +
+    unname(vc_mpw_ar1_tmb[[1]]$id.1[1:4, 1:4])) %>%
+    print(digits = 2)
+```
+
+:::
+
+### Inference of AR structure
+
+$H_0$: $\rho = 0$
+
+::: {.panel-tabset}
+
+#### `brms`
+
+Consider whether the 95% CI contains 0
+
+```{r}
+posterior_summary(m_pw_ar1, variable = "ar[1]")  # not significant
+```
+
+#### `glmmTMB`
+
+```{r anova-ar1}
+anova(m_pw_tmb, m_pw_ar1_tmb)  # Not statistically significant
+```
+
+:::
+
+# Intensive Longitudinal Data
+
+The data is the first wave of the Cognition, Health, and Aging Project. 
+
+```{r import_sav, message=FALSE}
+# Download the data from
+# https://www.pilesofvariance.com/Chapter8/SPSS/SPSS_Chapter8.zip, and put it
+# into the "data_files" folder
+zip_data <- here("data_files", "SPSS_Chapter8.zip")
+if (!file.exists(zip_data)) {
+    download.file(
+        "https://www.pilesofvariance.com/Chapter8/SPSS/SPSS_Chapter8.zip",
+        zip_data
+    )
+}
+stress_data <- read_sav(
+    unz(zip_data,
+        "SPSS_Chapter8/SPSS_Chapter8.sav"))
+stress_data
+```
+
+The data is already in long format. 
+
+# Data Exploration
+
+```{r pmc}
+# First, separate the time-varying variables into within-person and
+# between-person levels
+stress_data <- stress_data %>%
+    # Center mood (originally 1-5) at 1 for interpretation (so it becomes 0-4)
+    # Also recode women to factor
+    mutate(mood1 = mood - 1,
+           women = factor(women, levels = c(0, 1),
+                          labels = c("men", "women"))) %>%
+    group_by(PersonID) %>%
+    # The `across()` function applies the same procedure on
+    # multiple variables
+    mutate(across(c(symptoms, mood1, stressor),
+                  # The `.` means the variable to be operated on
+                  list("pm" = ~ mean(., na.rm = TRUE),
+                       "pmc" = ~ . - mean(., na.rm = TRUE)))) %>%
+    ungroup()
+stress_data
+```
+
+```{r skim}
+# Use `datasummary_skim` for a quick summary
+datasummary_skim(stress_data %>%
+                     select(-PersonID, -session, -studyday, -dayofweek,
+                            -weekend, -mood,
+                            # PMC for a binary variable is not very meaningful
+                            -stressor_pmc))
+```
+
+
+```{r pairs-data}
+stress_data %>%
+    select(symptoms_pm, symptoms_pmc,
+           mood1_pm, mood1_pmc, stressor_pm, stressor) %>%
+    psych::pairs.panels(jiggle = TRUE, factor = 0.5, ellipses = FALSE,
+                        cex.cor = 1, cex = 0.5)
+```
+
+## Spaghetti Plot
+
+```{r p1p2}
+# Plotting mood
+p1 <- ggplot(stress_data, aes(x = studyday, y = mood1)) +
+    # add lines to connect the data for each person
+    geom_line(aes(color = factor(PersonID), group = PersonID)) +
+    # add a mean trajectory
+    stat_summary(fun = "mean", col = "red", size = 1, geom = "line") +
+    # suppress legend
+    guides(color = "none")
+# Plotting symptoms
+p2 <- ggplot(stress_data, aes(x = studyday, y = symptoms)) +
+    # add lines to connect the data for each person
+    geom_line(aes(color = factor(PersonID), group = PersonID)) +
+    # add a mean trajectory
+    stat_summary(fun = "mean", col = "red", size = 1, geom = "line") +
+    # suppress legend
+    guides(color = "none")
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+We can see that there is not a clear trend across time but fluctuations.
+
+We can also plot the trajectories for a random sample of individuals:
+
+```{r facet-traj}
+stress_data %>%
+    # randomly sample 40 individuals
+    filter(PersonID %in% sample(unique(PersonID), 40)) %>%
+    ggplot(aes(x = studyday, y = symptoms)) +
+    geom_point(size = 0.5) +
+    geom_line() +  # add lines to connect the data for each person
+    facet_wrap(~ PersonID, ncol = 10)
+```
+
+# Unconditional Models
+
+The outcome is `symptoms`, and the time-varying predictors are `mood1` and `stressor`. Let's look at the ICC for each of them. 
+
+```{r m0}
+m0_symp <- lmer(symptoms ~ (1 | PersonID), data = stress_data)
+performance::icc(m0_symp)
+m0_mood <- lmer(mood1 ~ (1 | PersonID), data = stress_data)
+performance::icc(m0_mood)
+# Use glmer(..., family = binomial) for a binary outcome; to be discussed in a later week
+m0_stre <- glmer(stressor ~ (1 | PersonID), data = stress_data,
+                 family = binomial)
+performance::icc(m0_stre)
+```
+
+# Check the Trend of the Data
+
+One thing to consider with longitudinal data in a short time is whether there may be trends in the data due to contextual factors (e.g., weekend effect; shared life events at a specific time). If this is the case, a common practice is to de-trend the data; otherwise, associations between predictors and the outcome may be merely due to contextual factors happening on certain days.
+
+There is no strong reason to think the data contain trends, as shown in the graphs. We can further test the linear trend:
+
+```{r m0_trend}
+m0_trend <- glmmTMB(symptoms ~ studyday + (studyday | PersonID),
+    data = stress_data,
+    REML = TRUE
+)
+summary(m0_trend)
+```
+
+which was not significant. If there was a trend, we should include the time variable when studying the time-varying covariates.
+
+# Covariance Structure
+
+```{r}
+# AR(1)
+m0_ar1 <- glmmTMB(
+    symptoms ~ ar1(factor(studyday) + 0 | PersonID),
+    data = stress_data,
+    REML = TRUE
+)
+anova(m0_symp, m0_ar1)  # not significant
+```
+
+# Time-Varying Covariate
+
+Aka level-1 predictors; also put in the cross-level interaction with `women`.
+
+Level 1:
+$$\text{symptoms}_{ti} = \beta_{0i} + \beta_{1i} \text{mood1\_pmc}_{ti} + e_{ti}$$
+Level 2:
+$$
+  \begin{aligned}
+    \beta_{0i} & = \gamma_{00} + \gamma_{01} \text{mood1\_pm}_{i} + 
+                   \gamma_{02} \text{women}_i + 
+                   \gamma_{03} \text{mood1\_pm}_{i} \times \text{women}_i 
+                   + u_{0i}  \\
+    \beta_{1i} & = \gamma_{10} + \gamma_{11} \text{women}_i + u_{1i}
+  \end{aligned}
+$$
+
+- $\gamma_{03}$ = between-person interaction
+- $\gamma_{11}$ = cross-level interaction
+
+
+```{r m1}
+m1 <- brm(
+    symptoms ~ (mood1_pm + mood1_pmc) * women + (mood1_pmc | PersonID),
+    data = stress_data,
+    seed = 2315,
+    file = "brms_cached_m1_symptoms"
+)
+summary(m1)
+```
+
+## Plotting
+
+```{r plot-m1}
+plot(
+    conditional_effects(m1),
+    points = TRUE,
+    point_args = list(
+        size = 0.5, width = 0.05, height = 0.1)
+)
+```
+
+### Between/Within effects
+
+```{r plot-bw}
+broom.mixed::augment(m1) %>%
+    mutate(mood1 = mood1_pm + mood1_pmc) %>%
+    ggplot(aes(x = mood1, y = symptoms, color = factor(PersonID))) +
+    # Add points
+    geom_point(size = 0.5, alpha = 0.2) +
+    # Add within-cluster lines
+    geom_smooth(aes(y = .fitted),
+        method = "lm", se = FALSE, size = 0.5
+    ) +
+    # Add group means
+    stat_summary(
+        aes(x = mood1_pm, y = .fitted, fill = factor(PersonID)),
+        color = "red", # add border
+        fun = mean,
+        geom = "point",
+        shape = 24,
+        # use triangles
+        size = 2.5
+    ) +
+    # Add between coefficient
+    geom_smooth(aes(x = mood1_pm, y = .fitted),
+        method = "lm", se = FALSE,
+        color = "black"
+    ) +
+    facet_grid(~women) +
+    labs(y = "Daily Symptoms") +
+    # Suppress legend
+    guides(color = "none", fill = "none")
+```
+
+
+## Add `stressor`
+
+```{r m2}
+# Convert stressor to a factor
+stress_data$stressor <- factor(stress_data$stressor,
+                               levels = c(0, 1),
+                               labels = c("stressor-free day", "stressor day"))
+m2 <- brm(
+    symptoms ~ (mood1_pm + mood1_pmc) * women + stressor_pm + stressor +
+        (mood1_pmc + stressor | PersonID),
+    data = stress_data,
+    seed = 2315,
+    file = "brms_cached_m2_symptoms"
+)
+```
+
+### Plotting
+
+```{r plot-m2}
+plot(
+    conditional_effects(m2, effects = c("stressor_pm", "stressor")),
+    points = TRUE,
+    point_args = list(
+        size = 0.5, width = 0.05, height = 0.1)
+)
+```
+
+# Bonus: Generalized Estimating Equations (GEE)
+
+GEE is an alternative estimation method for clustered data, as discussed in 12.2 of Snijders and Bosker. It is a popular method, especially for longitudinal data in some research areas, as it offers some robustness against misspecification in the random effect structure (e.g., autoregressive errors, missing random slopes, etc). It accounts for the covariance structure using a *working correlation matrix*, such as the *exchangeable* (aka compound symmetry) structure. On the other hand, it only estimates fixed effects (also called marginal effects), so we cannot know whether some slopes are different across persons, but only the average slopes. GEE estimates the fixed effects by iteratively calculating the working correlation matrix and updating the fixed effect estimates with OLS. At the end, it computes the standard errors using the cluster-robust sandwich estimator. 
+
+GEE tends to require a relatively large sample size, and is usually less efficient than MLM for the same model (i.e., GEE gives larger standard errors, wider confidence intervals, and thus has less statistical power), which can be seen in the example below. 
+
+Below is a quick demonstration of GEE using the `geepack` package in R. 
+
+```{r stress_data_lw}
+stress_data_lw <- stress_data %>%
+    drop_na(mood1_pm, mood1_pmc, women, stressor_pm, stressor) %>%
+    # Also need to convert to a data frame (instead of tibble)
+    as.data.frame()
+```
+
+
+```{r m2-gee}
+library(geepack)
+m2_gee <- geeglm(symptoms ~ (mood1_pm + mood1_pmc) * women +
+                   stressor_pm + stressor,
+                 data = stress_data_lw,
+                 id = PersonID,
+                 corstr = "exchangeable",
+                 std.err = "san.se")
+summary(m2_gee)
+# Small sample correction (Mancl & DeRouen, 2001) for the robust standard errors
+library(geesmv)
+m2_vcov_md <- GEE.var.md(symptoms ~ (mood1_pm + mood1_pmc) * women +
+                           stressor_pm + stressor,
+                         data = stress_data_lw,
+                         id = "PersonID",  # need to be string
+                         corstr = "exchangeable")
+library(lmtest)  # For testing using corrected standard error
+coeftest(m2_gee, diag(m2_vcov_md$cov.beta))
+```
+
+```{r msummary-bayes-gee}
+# Ignore clustering
+m2_lm <- lm(
+    symptoms ~ (mood1_pm + mood1_pmc) * women +
+        stressor_pm + stressor,
+    data = stress_data_lw
+)
+# Refit m2 with glmmTMB
+m2 <- lmer(
+    symptoms ~ (mood1_pm + mood1_pmc) * women + stressor_pm + stressor +
+        (mood1_pmc + stressor | PersonID),
+    data = stress_data_lw
+)
+# Compare the fixed effects
+msummary(
+    list(
+        OLS = m2_lm,
+        MLM = m2,
+        `GEE (Sandwich SE)` = m2_gee,
+        `GEE (Sandwich SE + small-sample correction)` = m2_gee
+    ),
+    vcov = list(
+        OLS = NULL,
+        MLM = NULL,
+        `GEE (Sandwich SE)` = NULL,
+        `GEE (Sandwich SE + small-sample correction)` =
+        diag(m2_vcov_md$cov.beta)
+    ),
+    coef_rename = c("mood1_pmwomenwomen" = "mood1_pm:womenwomen",
+                    "mood1_pmcwomenwomen" = "mood1_pmc:womenwomen")
+)
+```
+
+As shown above, for OLS regression, which ignores the temporal dependence of the data, the standard errors for the between-level coefficients are too small. The results with MLM and GEE are comparable, although GEE only gives fixed effect estimates. Overall, GEE tends to have larger standard errors, especially when using the small-sample correction. In sum, the pros and cons of GEE are:
+
+- Pros: 
+    * Not requiring specification of the random part
+    * Robust to moderate degree of misspecification in the random-effect covariance structure
+    * Likely valid inferences on the fixed effects
+- Cons:
+    * Loss of statistical power (which may not be a concern in really large samples)
+    * No results and predictions for individual-specific models, as the random effect part is not modeled
+    * No likelihood-based statistical tools (e.g., AIC/BIC)

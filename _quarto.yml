@@ -38,6 +38,8 @@ website:
         - modules/week7.qmd
         - modules/week8.qmd
         - modules/week9.qmd
+        - modules/week10.qmd
+        - modules/week11.qmd
 
     - id: codes
       title: "R code"
@@ -51,6 +53,8 @@ website:
         - codes/rcode7.qmd
         - codes/rcode8.qmd
         - codes/rcode9.qmd
+        - codes/rcode10.qmd
+        - codes/rcode11.qmd
 
 format:
   html:
