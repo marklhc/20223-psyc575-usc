@@ -1,0 +1,127 @@
+---
+title: "HW 9 Template"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+comma <- function(x, d = 2) format(x, digits = d, big.mark = ",")
+print_p <- function(x, d = 3) {
+    if (x >= .001) {
+        return(
+            paste("*p* =", sub("^0+", "", format(round(x, d), nsmall = d)))
+        )
+    } else {
+        return("*p* < .001")
+    }
+}
+```
+
+```{r load-pkg, message = FALSE}
+library(here)  # makes reading data more consistent
+library(tidyverse)  # for data manipulation and plotting
+library(haven)  # for importing SPSS/SAS/Stata data
+library(lme4)  # for multilevel analysis
+library(boot)  # for bootstrap CI
+library(bootmlm)  # for multilevel bootstrap
+library(performance)  # for ICC and R^2
+library(sjPlot)  # for plotting
+library(parameters)  # for kr results
+library(modelsummary)  # for making tables
+theme_set(theme_classic() +
+    theme(panel.grid.major.y = element_line(color = "grey92")))
+```
+
+# Research Question
+
+> Is income related to self-report happiness within a country?
+
+# Variables
+
+1. `CountryID`: Country ID
+2. `country`: Country's name
+3. `income`: Income level (0-_least income_ to 9-_most income_)
+4. `happy`: Feel happy (1-_not happy_ to 4-_very happy_)
+
+## Import Data
+
+```{r}
+happy_dat <- read_sav(here("data_files", "happy_combined.sav"))
+# Cluster means
+happy_dat <- happy_dat %>%
+    group_by(country) %>%
+    mutate(income_cm = mean(income)) %>%
+    ungroup()
+```
+
+## Variable Summary
+
+```{r}
+# By Country
+datasummary(country ~ (income + happy) * (N + Mean + SD + Histogram),
+            data = happy_dat)
+```
+
+## Preliminary Analysis
+
+### Intraclass Correlation
+
+```{r}
+m0 <- lmer(happy ~ (1 | country), data = happy_dat)
+performance::icc(m0)
+```
+
+### Model
+
+Level 1:
+
+$$\text{happy}_{ij} = \beta_{0j} + \beta_{1j} \text{income}_{ij} + e_{ij}$$
+Level 2:
+
+$$
+  \begin{aligned}
+    \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income\_cm}_{j} + u_{0j}     \\
+    \beta_{1j} & = \gamma_{10} + u_{1j}
+  \end{aligned}
+$$
+
+### Analysis
+
+We used 4 chains, each with 4,000 iterations (first 2,000 as warm-ups). 
+
+```{r}
+m1 <- lmer(happy ~ income + income_cm + (income | country),
+           data = happy_dat)
+```
+
+## Results
+
+```{r table-fm}
+msummary(m1,
+         estimate = c("{estimate} [{conf.low}, {conf.high}]"),
+         statistic = NULL,  # suppress the extra rows for SEs
+         shape = effect + term ~ model,
+         title = "Model coefficients")
+```
+
+```{r, include = FALSE}
+m1_coef <- parameters::parameters(m1, ci_method = "satterthwaite")
+print_coef <- function(term, tab = m1_coef) {
+    coef_pos <- which(tab$Parameter == term)
+    paste0(comma(tab[coef_pos, "Coefficient"]),
+           ", *SE* = ", comma(tab[coef_pos, "SE"]),
+           ", *t*(", comma(tab[coef_pos, "df_error"]), ") = ",
+           comma(tab[coef_pos, "t"], 3),
+           ", ", print_p(tab[coef_pos, "p"]))
+}
+r2_m1 <- MuMIn::r.squaredGLMM(m1)
+```
+
+```{r, include = FALSE, cache = TRUE}
+boo_r2 <- bootstrap_mer(m1, MuMIn::r.squaredGLMM, nsim = 1999,
+                        type = "residual")
+```
+
+Table\ \@ref(tab:table-fm) shows the fixed-effect coefficients. We found evidence for the positive association, averaged across countries, between income and happiness at the individual level, $\gamma_{10}$ = `r print_coef("income")`. The contextual effect was not significant, $\gamma_{01}$ = `r print_coef("income_cm")`. The marginal $R^2$ (Nakagawa et al., 2017) for the model was estimated to be `r comma(r2_m1[1], 2)`, 95% bootstrap CI [`r paste0(round(boot.ci(boo_r2, index = 1, type = "perc")$percent[4:5], 2), collapse = ", ")`].

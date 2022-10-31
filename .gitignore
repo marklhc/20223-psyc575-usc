@@ -8,7 +8,8 @@
 /local_files/
 /.quarto/
 /.vscode/
-/hw/
+/hw/*
+!/hw/hw9_template.*
 
 # generated site
 /_site/
