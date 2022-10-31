@@ -117,7 +117,7 @@ Level 2:
 
 $$
   \begin{align}
-    \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income\_cm}_{j} + u_{0j}     \\
+    \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income_cm}_{j} + u_{0j}     \\
     \beta_{1j} & = \gamma_{10} + u_{1j}
   \end{align}
 $$
