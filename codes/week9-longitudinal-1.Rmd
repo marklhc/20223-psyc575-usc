@@ -374,7 +374,7 @@ m_lin_spline <- brm(
     read ~ bs(time0, knots = 1, degree = 1) +
         (bs(time0, knots = 1, degree = 1) | id),
     data = curran_long,
-    file = "brms_cahced_m_lin_spline",
+    file = "brms_cached_m_lin_spline",
     # increase adapt_delta as there was a divergent transition warning
     control = list(adapt_delta = 0.9)
 )
