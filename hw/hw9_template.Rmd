@@ -2,7 +2,7 @@
 title: "HW 9 Template"
 author: "Mark Lai"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: github_document
 ---
 
 ```{r setup, include = FALSE}
@@ -65,7 +65,7 @@ happy_dat <- happy_dat %>%
 
 ```{r}
 # By Country
-datasummary(country ~ (income + happy) * (N + Mean + SD),
+datasummary(country ~ (income + happy) * (N + Mean + SD + Histogram),
             data = happy_dat)
 ```
 
@@ -85,10 +85,10 @@ $$\text{happy}_{ij} = \beta_{0j} + \beta_{1j} \text{income}_{ij} + e_{ij}$$
 Level 2:
 
 $$
-  \begin{aligned}
+  \begin{align}
     \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income\_cm}_{j} + u_{0j}     \\
     \beta_{1j} & = \gamma_{10} + u_{1j}
-  \end{aligned}
+  \end{align}
 $$
 
 ```{r}

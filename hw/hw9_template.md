@@ -18,16 +18,17 @@ theme_set(theme_classic() +
     theme(panel.grid.major.y = element_line(color = "grey92")))
 ```
 
-# Research Question
+# Revised Prospectus
 
-> Is income related to self-report happiness within a country?
+You can separate your prospectus and preliminary analysis in different
+files, if needed. Please Include:
 
-# Variables
+- Sufficient background to understand your research
+- Research questions clearly defined
+- A description of the nesting structure of your data
+- Your plan of data analysis
 
-1.  `CountryID`: Country ID
-2.  `country`: Country’s name
-3.  `income`: Income level (0-*least income* to 9-*most income*)
-4.  `happy`: Feel happy (1-*not happy* to 4-*very happy*)
+# Preliminary Analysis
 
 ## Import Data
 
@@ -41,6 +42,11 @@ happy_dat <- happy_dat %>%
 ```
 
 ## Variable Summary
+
+- `CountryID`: Country ID
+- `country`: Country’s name
+- `income`: Income level (0-*least income* to 9-*most income*)
+- `happy`: Feel happy (1-*not happy* to 4-*very happy*)
 
 ``` r
 # By Country
@@ -89,9 +95,7 @@ datasummary(country ~ (income + happy) * (N + Mean + SD + Histogram),
 | Uk          |        133 |          5.05 |        2.94 |         ▃▂▃▄▄▃▃▅▃▇ |               133 |                 3.26 |               0.65 |                       ▁▇▅ |
 | W. Germany  |        222 |          3.15 |        2.53 |         ▄▇▇▄▃▂▂▂▁▂ |               222 |                 3.00 |               0.59 |                       ▁▇▂ |
 
-## Preliminary Analysis
-
-### Intraclass Correlation
+## Intraclass Correlation
 
 ``` r
 m0 <- lmer(happy ~ (1 | country), data = happy_dat)
@@ -103,23 +107,20 @@ performance::icc(m0)
     ##     Adjusted ICC: 0.121
     ##   Unadjusted ICC: 0.121
 
-### Model
+## Model
 
 Level 1:
 
 $$\text{happy}_{ij} = \beta_{0j} + \beta_{1j} \text{income}_{ij} + e_{ij}$$
+
 Level 2:
 
 $$
-  \begin{aligned}
+  \begin{align}
     \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income\_cm}_{j} + u_{0j}     \\
     \beta_{1j} & = \gamma_{10} + u_{1j}
-  \end{aligned}
+  \end{align}
 $$
-
-### Analysis
-
-We used 4 chains, each with 4,000 iterations (first 2,000 as warm-ups).
 
 ``` r
 m1 <- lmer(happy ~ income + income_cm + (income | country),
@@ -133,7 +134,7 @@ msummary(m1,
          estimate = c("{estimate} [{conf.low}, {conf.high}]"),
          statistic = NULL,  # suppress the extra rows for SEs
          shape = effect + term ~ model,
-         title = "Model coefficients")
+         title = "Table 1: Model coefficients")
 ```
 
 |        |                                 |         Model 1         |
@@ -153,12 +154,20 @@ msummary(m1,
 |        | ICC                             |           0.1           |
 |        | RMSE                            |          0.68           |
 
-Model coefficients
+Table 1: Model coefficients
 
-Table @ref(tab:table-fm) shows the fixed-effect coefficients. We found
-evidence for the positive association, averaged across countries,
-between income and happiness at the individual level, $\gamma_{10}$ =
-0.047, *SE* = 0.0077, *t*(35) = 6.06, *p* \< .001. The contextual effect
-was not significant, $\gamma_{01}$ = 0.06, *SE* = 0.04, *t*(38) = 1.49,
-*p* = .144. The marginal $R^2$ (Nakagawa et al., 2017) for the model was
+``` r
+plot_model(m1, type = "pred", pred.type = "re",
+           terms = "income", show.data = TRUE,
+           jitter = 0.1, dot.size = 0.2)
+```
+
+![](hw9_template_files/figure-gfm/fig-m1-1.png)<!-- -->
+
+Table 1 shows the fixed-effect coefficients. We found evidence for the
+positive association, averaged across countries, between income and
+happiness at the individual level, $\gamma_{10}$ = 0.047, *SE* = 0.0077,
+*t*(35) = 6.06, *p* \< .001. The contextual effect was not significant,
+$\gamma_{01}$ = 0.06, *SE* = 0.04, *t*(38) = 1.49, *p* = .144 (see the
+Figure). The marginal $R^2$ (Nakagawa et al., 2017) for the model was
 estimated to be 0.037, 95% bootstrap CI \[0.02, 0.07\].
