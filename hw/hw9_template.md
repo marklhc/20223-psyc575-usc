@@ -111,13 +111,13 @@ performance::icc(m0)
 
 Level 1:
 
-$$\text{happy}_{ij} = \beta_{0j} + \beta_{1j} \text{income}_{ij} + e_{ij}$$
+$$happy_{ij} = \beta_{0j} + \beta_{1j} income_{ij} + e_{ij}$$
 
 Level 2:
 
 $$
   \begin{align}
-    \beta_{0j} & = \gamma_{00} + \gamma_{01} \text{income_cm}_{j} + u_{0j}     \\
+    \beta_{0j} & = \gamma_{00} + \gamma_{01} incomecm_{j} + u_{0j}     \\
     \beta_{1j} & = \gamma_{10} + u_{1j}
   \end{align}
 $$
