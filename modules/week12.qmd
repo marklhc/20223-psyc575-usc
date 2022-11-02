@@ -1,12 +1,16 @@
 ---
-title: "week12 modified"
-format: html
-editor: source
+title: "Week 12: Logistic Models"
+subtitle: "Multilevel Logistic Models"
+execute:
+  echo: false
+params:
+  slides: "12_multilevel_logistic"
 ---
 
 ```{r}
-knitr::opts_chunk$set(echo = FALSE)
-source("helper.R")
+#| include: false
+source("../helper.R")
+source("../render_slides.R", local = TRUE)
 ```
 
 # Week Learning Objectives
@@ -17,8 +21,6 @@ By the end of this module, you will be able to
 -   Write model equations for multilevel logistic regression
 -   Estimate intraclass correlations for binary outcomes
 -   Plot model predictions in probability unit
-
-::: {.panel-tabset}
 
 ## Task Lists
 
@@ -35,14 +37,9 @@ By the end of this module, you will be able to
 
 [Note that in some of the videos below, the Bayesian analyses were used; however, for the class this year, we will stay with frequentist analyses. The results and interpretations are basically; just note some differences in the terminology.]{style="color:red"}
 
-You can view and download the slides here: [PDF](%60r%20file.path(%22slides%22,%20paste0(params$slides,%20%22.pdf%22))%60){target="_blank"}
+[PDF version](`r file.path("/slides", paste0(params$slides, ".pdf"))`){target="_blank"}
 
-```{r}
-library(checkdown)
-right_ans <- c("Correct :+1:", 
-               "Great job :+1:")
-wrong_ans <- "Try again. You can do it!"
-```
+::: {.panel-tabset}
 
 ## Logistic MLM
 
@@ -50,12 +47,10 @@ wrong_ans <- "Try again. You can do it!"
 add_youtube("amg_pAGFS-A")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: Which of the following is a binary variable?",
+  "Which of the following is a binary variable?",
   answer = "Whether a participant gets hospitalized or not.", 
   options = c("The number of symptoms a person show per day.", 
               "The time from the start of a study to when a participant gets hospitalized.", 
@@ -64,20 +59,16 @@ practice_question(
 )
 ```
 
-------------------------------------------------------------------------
-
 ### Example Data
 
 ```{r}
 add_youtube("LSDPVPUQpUc")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: Which of the following is **not** a reason to use a logistic model?",
+  "Which of the following is **not** a reason to use a logistic model?",
   answer = "Dichotomizing an outcome can make interpretation easier.", 
   options = c("Dichotomizing an outcome can make interpretation easier.", 
               "It uses a distribution suitable for a binary outcome.", 
@@ -86,20 +77,16 @@ practice_question(
 )
 ```
 
-------------------------------------------------------------------------
-
 ## Elements of Logistic MLM
 
 ```{r}
 add_youtube("ZWDSTPnahVs")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: A logistic model assumes that the outcome follows",
+  "A logistic model assumes that the outcome follows",
   answer = "a Bernoulli distribution.", 
   options = c("a normal distribution.", 
               "a Student's t distribution.", 
@@ -108,18 +95,14 @@ practice_question(
 )
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 add_youtube("fIZZSmVdiIs")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: A log odds of 0.5 corresponds to a probability of",
+  "A log odds of 0.5 corresponds to a probability of",
   answer = "0.62.", 
   options = c("0.12.", 
               "0.5", 
@@ -128,9 +111,7 @@ practice_question(
 )
 ```
 
-------------------------------------------------------------------------
-
-You are not alone if you have trouble understanding "odds" and "log odds". This video may give you a better idea: https://www.youtube.com/watch?v=ARfXDSkQf1Y
+You are not alone if you have trouble understanding "odds" and "log odds". This video might give you a better idea: <https://www.youtube.com/watch?v=ARfXDSkQf1Y>
 
 ## Unconditional Model
 
@@ -140,12 +121,10 @@ You are not alone if you have trouble understanding "odds" and "log odds". This 
 add_youtube("oi79Zl-IQf8")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: In a logistic model predicting whether a person reported a daily stressor, the coefficient of age was -0.5. The interpretation is that",
+  "In a logistic model predicting whether a person reported a daily stressor, the coefficient of age was -0.5. The interpretation is that",
   answer = "every unit increase in age is associated with a 0.5 decrease in the log odds of reporting a daily stressor.", 
   options = c("every unit increase in age is associated with a 0.5 unit decrease of a daily stressor.", 
               "every unit increase in age is associated with a 0.5 percentage point decrease of reporting a daily stressor.", 
@@ -153,8 +132,6 @@ practice_question(
   type = "radio"
 )
 ```
-
-------------------------------------------------------------------------
 
 ## Adding Predictors
 
@@ -168,12 +145,10 @@ add_youtube("P95ruzXQAiU")
 add_youtube("Tq1XaZO_8Bc")
 ```
 
-------------------------------------------------------------------------
-
 ```{r}
 #| results: asis
 practice_question(
-  "Check your learning: A researcher wants to compare the proportion of minority hires in the past year across departments and schools. The total number of hires for each department is known. Which model is the most appropriate?",
+  "A researcher wants to compare the proportion of minority hires in the past year across departments and schools. The total number of hires for each department is known. Which model is the most appropriate?",
   answer = "Binomial logistic", 
   options = c("Binomial logistic", 
               "Poisson", 
@@ -181,3 +156,5 @@ practice_question(
   type = "radio"
 )
 ```
+
+:::
